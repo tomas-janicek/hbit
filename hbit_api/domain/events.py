@@ -25,3 +25,7 @@ class NotifyNewAccount(Event):
 
 class NotifyRecoverPassword(Event):
     email: str
+
+
+class TestNotify(Event):
+    email: str

@@ -1,6 +1,7 @@
 import svcs
 from sqlalchemy.orm import sessionmaker
 
+from hbit_api.adapters import email_sender
 from hbit_api.adapters.orm import start_mappers
 from hbit_api.api import deps
 from hbit_api.core import db
@@ -27,4 +28,9 @@ def bootstrap(registry: svcs.Registry) -> None:
     registry.register_value(
         svc_type=messagebus.MessageBus,
         value=bus,
+    )
+    sender = email_sender.EmailSender()
+    registry.register_value(
+        svc_type=email_sender.BaseEmailSender,
+        value=sender,
     )

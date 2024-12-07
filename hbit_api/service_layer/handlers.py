@@ -6,6 +6,7 @@ from jose import jwt
 from pydantic import ValidationError
 
 from hbit_api import errors, utils
+from hbit_api.adapters import email_sender
 from hbit_api.core import security
 from hbit_api.core.config import settings
 from hbit_api.domain import commands, events, models
@@ -211,12 +212,13 @@ def send_new_account_email(
     event: events.NotifyNewAccount,
     services: svcs.Container,
 ) -> None:
+    sender = services.get(email_sender.BaseEmailSender)
+
     if settings.emails_enabled:
         email_data = utils.generate_new_account_email(
             email_to=event.email, username=event.email
         )
-        # TODO: Create email sender service so we can fake this
-        utils.send_email(
+        sender.send_email(
             email_to=event.email,
             subject=email_data.subject,
             html_content=email_data.html_content,
@@ -227,12 +229,27 @@ def send_password_recovery_email(
     event: events.NotifyRecoverPassword,
     services: svcs.Container,
 ) -> None:
+    sender = services.get(email_sender.BaseEmailSender)
+
     password_reset_token = utils.generate_password_reset_token(email=event.email)
     email_data = utils.generate_reset_password_email(
         email_to=event.email, email=event.email, token=password_reset_token
     )
-    # TODO: Create email sender service so we can fake this
-    utils.send_email(
+    sender.send_email(
+        email_to=event.email,
+        subject=email_data.subject,
+        html_content=email_data.html_content,
+    )
+
+
+def send_test_email(
+    event: events.TestNotify,
+    services: svcs.Container,
+) -> None:
+    sender = services.get(email_sender.BaseEmailSender)
+
+    email_data = utils.generate_test_email(email_to=event.email)
+    sender.send_email(
         email_to=event.email,
         subject=email_data.subject,
         html_content=email_data.html_content,
@@ -242,6 +259,7 @@ def send_password_recovery_email(
 EVENT_HANDLERS: events.EventHandlersConfig = {
     events.NotifyNewAccount: (send_new_account_email,),
     events.NotifyRecoverPassword: (send_password_recovery_email,),
+    events.TestNotify: (send_test_email,),
 }
 
 COMMAND_HANDLERS: commands.CommandHandlerConfig = {
