@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from hbit_api import errors, utils
 from hbit_api.core import security
 from hbit_api.core.config import settings
-from hbit_api.domain import commands, events, model
+from hbit_api.domain import commands, events, models
 from hbit_api.domain.dto import users as dto
 
 from . import unit_of_work
@@ -58,7 +58,7 @@ def authenticate_user(
         return dto.UserDto(
             id=user.id,  # type: ignore
             email=user.email,
-            full_name=user.full_name,
+            name=user.name,
             is_active=user.is_active,
             is_superuser=user.is_superuser,
         )
@@ -70,7 +70,7 @@ def add_author(
 ) -> None:
     uow = services.get(unit_of_work.UnitOfWork)
     with uow:
-        author = model.Author(name=cmd.name, books=[])
+        author = models.Author(name=cmd.name, books=[])
         uow.authors.add(author)
         uow.commit()
 
@@ -83,9 +83,9 @@ def add_book(
     with uow:
         edition = uow.editions.get(name=cmd.name)
         if edition is None:
-            edition = model.Edition(name=cmd.name, books=[])
+            edition = models.Edition(name=cmd.name, books=[])
             uow.editions.add(edition)
-        edition.books.append(model.Book(name=cmd.name, authors=[]))
+        edition.books.append(models.Book(name=cmd.name, authors=[]))
         uow.commit()
 
 
@@ -99,9 +99,9 @@ def add_user(
         if user:
             raise errors.AlreadyExists()
 
-        user = model.User(
+        user = models.User(
             email=cmd.email,
-            full_name=cmd.full_name,
+            name=cmd.name,
             hashed_password=security.get_password_hash(cmd.password.get_secret_value()),
             is_superuser=cmd.is_superuser,
         )
@@ -120,6 +120,8 @@ def update_user(
         user = uow.users.get_by_id(cmd.id)
         if not user:
             raise errors.DoesNotExist()
+        if cmd.name:
+            user.name = cmd.name
         if cmd.email:
             existing_user = uow.users.get(email=cmd.email)
             if existing_user and existing_user.id != user.id:
@@ -197,7 +199,12 @@ def delete_user(
 ) -> None:
     uow = services.get(unit_of_work.UnitOfWork)
     with uow:
-        uow.users.delete(cmd.id)
+        user = uow.users.get_by_id(id=cmd.id)
+        if not user:
+            raise errors.DoesNotExist()
+        uow.users.delete(user)
+
+        uow.commit()
 
 
 def send_new_account_email(
@@ -245,4 +252,5 @@ COMMAND_HANDLERS: commands.CommandHandlerConfig = {
     commands.CreateUser: add_user,
     commands.UpdateUser: update_user,
     commands.UpdateUserPassword: update_user_password,
+    commands.DeleteUser: delete_user,
 }

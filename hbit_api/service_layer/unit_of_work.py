@@ -4,10 +4,10 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 
 from hbit_api.adapters import repository
-from hbit_api.domain import model
+from hbit_api.domain import models
 
 if typing.TYPE_CHECKING:
-    from hbit_api.domain import events, model
+    from hbit_api.domain import events
 
 
 class UnitOfWork(typing.Protocol):
@@ -34,15 +34,15 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         self.session = self.session_factory()
         self.users = repository.SqlUserRepository(
             session=self.session,
-            seen_tracker=repository.SeenSetTracker[model.User](),
+            seen_tracker=repository.SeenSetTracker[models.User](),
         )
         self.editions = repository.SqlEditionRepository(
             session=self.session,
-            seen_tracker=repository.SeenSetTracker[model.Edition](),
+            seen_tracker=repository.SeenSetTracker[models.Edition](),
         )
         self.authors = repository.SqlAuthorRepository(
             session=self.session,
-            seen_tracker=repository.SeenSetTracker[model.Author](),
+            seen_tracker=repository.SeenSetTracker[models.Author](),
         )
         return self
 

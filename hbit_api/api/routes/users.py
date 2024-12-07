@@ -11,6 +11,7 @@ from hbit_api.core.config import settings
 from hbit_api.domain import commands
 from hbit_api.domain.dto import generic as generic_dto
 from hbit_api.domain.dto import users as dto
+from hbit_api.service_layer import messagebus
 from hbit_api.views import users as views
 
 router = APIRouter()
@@ -39,15 +40,22 @@ def create_user(
     *,
     services: svcs.fastapi.DepContainer,
     super_user: deps.CurrentSuperUser,
-    create_user: commands.CreateUser,
+    body: dto.CreateUserDto,
 ) -> None:
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
+    create_user = commands.CreateUser(
+        email=body.email,
+        name=body.name,
+        password=body.password,
+        is_superuser=False,
+    )
+
     try:
         bus.handle(create_user)
     except errors.AlreadyExists as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"User with email {create_user.email} already exists.",
+            detail=f"User with email {body.email} already exists.",
         ) from error
     return None
 
@@ -62,10 +70,11 @@ def update_user_me(
     """
     Update own user.
     """
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
     update_user = commands.UpdateUser(
         id=current_user.id,
         email=body.email,
+        name=body.name,
     )
 
     try:
@@ -93,7 +102,7 @@ def update_password_me(
     """
     Update own password.
     """
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
     update_user = commands.UpdateUserPassword(
         id=current_user.id,
         current_password=body.current_password,
@@ -137,7 +146,7 @@ def delete_user_me(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
 
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
     delete_user = commands.DeleteUser(id=current_user.id)
     bus.handle(delete_user)
 
@@ -146,7 +155,7 @@ def delete_user_me(
 
 @router.post("/signup", response_model=generic_dto.Message)
 def register_user(
-    services: svcs.fastapi.DepContainer, create_user: commands.CreateUser
+    services: svcs.fastapi.DepContainer, body: commands.CreateUser
 ) -> generic_dto.Message:
     """
     Create new user without the need to be logged in.
@@ -157,7 +166,13 @@ def register_user(
             detail="Open user registration is forbidden on this server",
         )
 
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
+    create_user = commands.CreateUser(
+        email=body.email,
+        name=body.name,
+        password=body.password,
+        is_superuser=False,
+    )
 
     try:
         bus.handle(create_user)
@@ -179,7 +194,7 @@ def read_user_by_id(
     """
     Get a specific user by id.
     """
-    session = services.get(Session)
+    session = services.get(deps.SessionFactoryDep)
     user = views.read_user_by_id(session, user_id)
     if not user:
         raise HTTPException(
@@ -200,7 +215,7 @@ def update_user(
     """
     Update a user.
     """
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
 
     try:
         bus.handle(commands.UpdateUser(id=user_id, email=body.email))
@@ -229,7 +244,7 @@ def delete_user(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
 
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
     bus.handle(commands.DeleteUser(id=user_id))
 
     return generic_dto.Message(message="User deleted successfully")

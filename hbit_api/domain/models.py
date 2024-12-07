@@ -6,7 +6,7 @@ from hbit_api.domain import events
 @dataclass
 class User:
     email: str
-    full_name: str | None
+    name: str | None
     hashed_password: str
     is_active: bool = True
     is_superuser: bool = False

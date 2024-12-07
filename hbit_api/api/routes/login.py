@@ -6,11 +6,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
 from hbit_api import errors
-from hbit_api.api import deps
 from hbit_api.api.deps import CurrentUser
 from hbit_api.domain import commands
 from hbit_api.domain.dto import generic as generic_dto
 from hbit_api.domain.dto import users as dto
+from hbit_api.service_layer import messagebus
 
 router = APIRouter()
 
@@ -23,7 +23,7 @@ def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
     authenticate = commands.LogInUser(
         email=form_data.username, password=form_data.password
     )
@@ -38,12 +38,12 @@ def login_access_token(
     return token
 
 
-@router.post("/login/test-token", response_model=dto.UserDto)
-def test_token(current_user: CurrentUser) -> dto.UserDto:
+@router.post("/login/test-token", response_model=generic_dto.Message)
+def test_token(current_user: CurrentUser) -> generic_dto.Message:
     """
     Test access token
     """
-    return current_user
+    return generic_dto.Message(message="Token is valid")
 
 
 @router.post("/password-recovery/{email}")
@@ -53,7 +53,7 @@ def recover_password(
     """
     Password Recovery
     """
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
     recover_user_password = commands.RecoverUserPassword(email=email)
 
     try:
@@ -75,7 +75,7 @@ def reset_password(
     Reset password
     """
 
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
 
     try:
         bus.handle(reset_password)

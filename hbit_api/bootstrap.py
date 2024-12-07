@@ -16,7 +16,7 @@ def bootstrap(registry: svcs.Registry) -> None:
     )
     uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory=session_factory)
     registry.register_value(
-        svc_type=deps.UoWDep,
+        svc_type=unit_of_work.UnitOfWork,
         value=uow,
     )
     bus = messagebus.MessageBus(
@@ -25,6 +25,6 @@ def bootstrap(registry: svcs.Registry) -> None:
         registry=registry,
     )
     registry.register_value(
-        svc_type=deps.MessageBusDep,
+        svc_type=messagebus.MessageBus,
         value=bus,
     )

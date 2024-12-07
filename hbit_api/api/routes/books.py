@@ -6,6 +6,7 @@ from starlette import status
 
 from hbit_api.api import deps
 from hbit_api.domain import commands
+from hbit_api.service_layer import messagebus
 
 router = APIRouter()
 
@@ -20,6 +21,6 @@ def create_book(
     """
     Create new book.
     """
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
     bus.handle(message=create_book)
     return status.HTTP_200_OK

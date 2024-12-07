@@ -2,10 +2,10 @@ import svcs
 import typer
 from pydantic import SecretStr
 
-from hbit_api.api import deps
 from hbit_api.bootstrap import bootstrap
 from hbit_api.core.config import settings
 from hbit_api.domain import commands
+from hbit_api.service_layer import messagebus
 
 cli = typer.Typer()
 
@@ -16,10 +16,11 @@ def init_db_data() -> None:
     bootstrap(registry)
     services = svcs.Container(registry)
 
-    bus = services.get(deps.MessageBusDep)
+    bus = services.get(messagebus.MessageBus)
 
     create_user = commands.CreateUser(
         email=settings.FIRST_SUPERUSER,
+        name="Super User",
         password=SecretStr(settings.FIRST_SUPERUSER_PASSWORD),
         is_superuser=True,
     )

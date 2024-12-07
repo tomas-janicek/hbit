@@ -24,15 +24,16 @@ class CreateBook(Command):
 
 
 class CreateUser(Command):
-    email: EmailStr = Field(max_length=255)
-    full_name: str | None = Field(default=None, max_length=255)
-    password: SecretStr = Field(min_length=8, max_length=40)
+    email: EmailStr
+    name: str | None
+    password: SecretStr
     is_superuser: bool = False
 
 
 class UpdateUser(Command):
     id: int
-    email: EmailStr | None = Field(max_length=255, default=None)
+    email: EmailStr | None = None
+    name: str | None = None
 
 
 class UpdateUserPassword(Command):

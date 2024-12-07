@@ -1,14 +1,13 @@
 .PHONY: make-migrations migrate format lint
 
 make-migrations:
-	alembic revision --autogenerate -m $(m)
+	source .env && PYTHONPATH=. alembic revision --autogenerate -m $(m)
 
 migrate:
 	source .env && PYTHONPATH=. alembic upgrade head
 
-# TODO: Write this correctly with CLI
 init_db:
-	source .env && PYTHONPATH=. python hbit_api/initial_data.py
+	source .env && PYTHONPATH=. python hbit_api/cli.py init_db_data
 
 format:
 	ruff format

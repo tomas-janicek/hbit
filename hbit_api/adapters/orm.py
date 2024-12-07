@@ -3,7 +3,7 @@ import logging
 import sqlalchemy
 from sqlalchemy.orm import registry, relationship
 
-from hbit_api.domain import model
+from hbit_api.domain import models
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,7 @@ users = sqlalchemy.Table(
     sqlalchemy.Column("name", sqlalchemy.String(255)),
     sqlalchemy.Column("hashed_password", sqlalchemy.Text()),
     sqlalchemy.Column("is_active", sqlalchemy.Boolean),
+    sqlalchemy.Column("is_superuser", sqlalchemy.Boolean),
 )
 
 
@@ -39,7 +40,7 @@ books = sqlalchemy.Table(
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True),
     sqlalchemy.Column("name", sqlalchemy.String(255), nullable=False),
-    sqlalchemy.Column[model.Edition](
+    sqlalchemy.Column[models.Edition](
         "edition_id", sqlalchemy.ForeignKey("editions.id")
     ),
 )
@@ -48,8 +49,8 @@ map_book_to_author = sqlalchemy.Table(
     "map_book_to_author",
     metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True),
-    sqlalchemy.Column[model.Author]("author_id", sqlalchemy.ForeignKey("authors.id")),
-    sqlalchemy.Column[model.Book]("book_id", sqlalchemy.ForeignKey("books.id")),
+    sqlalchemy.Column[models.Author]("author_id", sqlalchemy.ForeignKey("authors.id")),
+    sqlalchemy.Column[models.Book]("book_id", sqlalchemy.ForeignKey("books.id")),
 )
 
 
@@ -58,16 +59,16 @@ def start_mappers() -> None:
     mapper_registry = registry()
 
     _user_mapper = mapper_registry.map_imperatively(
-        class_=model.User,
+        class_=models.User,
         local_table=users,
     )
     _book_mapper = mapper_registry.map_imperatively(
-        model.Book,
+        models.Book,
         local_table=books,
     )
 
     _author_mapper = mapper_registry.map_imperatively(
-        class_=model.Author,
+        class_=models.Author,
         local_table=authors,
         properties={
             "books": relationship(
@@ -78,7 +79,7 @@ def start_mappers() -> None:
         },
     )
     _edition_mapper = mapper_registry.map_imperatively(
-        class_=model.Edition,
+        class_=models.Edition,
         local_table=editions,
         properties={
             "books": relationship(_book_mapper),
