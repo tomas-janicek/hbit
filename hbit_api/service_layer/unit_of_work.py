@@ -16,6 +16,8 @@ class UnitOfWork(typing.Protocol):
     cves: repository.CVERepository
     cwes: repository.CWERepository
     capecs: repository.CAPECRepository
+    devices: repository.DeviceRepository
+    manufacturers: repository.ManufacturerRepository
 
     def __enter__(self) -> typing.Self: ...
 
@@ -55,13 +57,21 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
             session=self.session,
             seen_tracker=repository.SeenSetTracker[models.CAPEC](),
         )
+        self.devices = repository.SqlDeviceRepository(
+            session=self.session,
+            seen_tracker=repository.SeenSetTracker[models.Device](),
+        )
+        self.manufacturers = repository.SqlManufacturerRepository(
+            session=self.session,
+            seen_tracker=repository.SeenSetTracker[models.Manufacturer](),
+        )
         return self
 
     def __exit__(self, *args: typing.Any) -> None:
         self.rollback()
         self.session.close()
 
-    def collect_new_events(self) -> typing.Iterator["events.Event"]:
+    def collect_new_events(self) -> typing.Iterator["events.Event"]:  # noqa: C901
         for user in self.users.get_seen():
             while user.events:
                 yield user.events.pop(0)
@@ -81,6 +91,14 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         for capec in self.capecs.get_seen():
             while capec.events:
                 yield capec.events.pop(0)
+
+        for device in self.devices.get_seen():
+            while device.events:
+                yield device.events.pop(0)
+
+        for manufacturer in self.manufacturers.get_seen():
+            while manufacturer.events:
+                yield manufacturer.events.pop(0)
 
     def commit(self) -> None:
         self.session.commit()

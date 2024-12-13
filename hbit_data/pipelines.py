@@ -56,6 +56,18 @@ class CVEHBITPipeline(processors.Pipeline[dto.CVE]):
     def end_processing(self) -> None: ...
 
 
+class DevicesHBITPipeline(processors.Pipeline[dto.Device]):
+    def __init__(self, hbit_client: clients.HBITClient) -> None:
+        self.hbit_client = hbit_client
+
+    def process_batch(self, items: list[dto.Device]) -> None:
+        if not items:
+            return
+        self.hbit_client.send_devices(items)
+
+    def end_processing(self) -> None: ...
+
+
 class CAPECHBITPipeline(processors.Pipeline[dto.CAPEC]):
     def __init__(self, hbit_client: clients.HBITClient) -> None:
         self.hbit_client = hbit_client

@@ -76,6 +76,30 @@ cves = sqlalchemy.Table(
     sqlalchemy.Column("cvss", sqlalchemy.JSON),
 )
 
+map_patch_to_device = sqlalchemy.Table(
+    "map_patch_to_device",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True),
+    sqlalchemy.Column("patch_id", sqlalchemy.ForeignKey("patches.id")),
+    sqlalchemy.Column("device_id", sqlalchemy.ForeignKey("devices.id")),
+    sqlalchemy.UniqueConstraint(
+        "patch_id", "device_id", name="unique_patch_id_device_id"
+    ),
+)
+
+devices = sqlalchemy.Table(
+    "devices",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True),
+    sqlalchemy.Column("identifier", sqlalchemy.Text, unique=True),
+    sqlalchemy.Column("manufacturer_id", sqlalchemy.ForeignKey("manufacturers.id")),
+    sqlalchemy.Column("name", sqlalchemy.Text),
+    sqlalchemy.Column("models", sqlalchemy.JSON),
+    sqlalchemy.Column("released", sqlalchemy.Date, nullable=True),
+    sqlalchemy.Column("discontinued", sqlalchemy.Date, nullable=True),
+    sqlalchemy.Column("hardware_info", sqlalchemy.JSON),
+)
+
 map_cwe_to_cve = sqlalchemy.Table(
     "map_cwe_to_cve",
     metadata,
@@ -84,6 +108,14 @@ map_cwe_to_cve = sqlalchemy.Table(
     sqlalchemy.Column("cve_id", sqlalchemy.ForeignKey("cves.id")),
     sqlalchemy.UniqueConstraint("cwe_id", "cve_id", name="unique_cwe_id_cve_id"),
 )
+
+manufacturers = sqlalchemy.Table(
+    "manufacturers",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True),
+    sqlalchemy.Column("name", sqlalchemy.Text, unique=True),
+)
+
 
 patches = sqlalchemy.Table(
     "patches",
@@ -143,6 +175,15 @@ def start_mappers() -> None:
             )
         },
     )
+    _manufacturer_mapper = mapper_registry.map_imperatively(
+        class_=models.Manufacturer,
+        local_table=manufacturers,
+    )
+    _device_mapper = mapper_registry.map_imperatively(
+        class_=models.Device,
+        local_table=devices,
+        properties={"manufacturer": relationship(_manufacturer_mapper)},
+    )
     _patch_mapper = mapper_registry.map_imperatively(
         class_=models.Patch,
         local_table=patches,
@@ -151,6 +192,11 @@ def start_mappers() -> None:
                 _cve_mapper,
                 secondary=map_cve_to_patch,
                 collection_class=list,
-            )
+            ),
+            "devices": relationship(
+                _device_mapper,
+                secondary=map_patch_to_device,
+                collection_class=list,
+            ),
         },
     )

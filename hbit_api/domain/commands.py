@@ -3,7 +3,7 @@ import typing
 import svcs
 from pydantic import BaseModel, EmailStr, Field, SecretStr
 
-from hbit_api.domain.dto import vuls
+from hbit_api.domain.dto import devices, vuls
 
 
 class Command(BaseModel):
@@ -73,3 +73,7 @@ class CreatePatches(Command):
 class CreateCVEs(Command):
     patch_build: str
     cve_batch: list[vuls.CVEDto]
+
+
+class CreateDevices(Command):
+    device_batch: list[devices.DeviceDto]

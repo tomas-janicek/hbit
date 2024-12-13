@@ -35,6 +35,14 @@ class HBITClient:
             content=cve_adapter.dump_json(cves),
         )
 
+    def send_devices(self, devices: list[dto.Device]) -> None:
+        devices_adapter = pydantic.TypeAdapter(list[dto.Device])
+        self.request.post(
+            base=self.hbit_api_url,
+            path="/devices/batch",
+            content=devices_adapter.dump_json(devices),
+        )
+
     def send_cwes(self, cwes: list[dto.CWE]) -> None:
         cwes_adapter = pydantic.TypeAdapter(list[dto.CWE])
         self.request.post(

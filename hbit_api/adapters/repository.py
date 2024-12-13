@@ -12,6 +12,7 @@ PreparedValues = (
 )
 
 
+# TODO: Where should I use seen tracker?
 class SeenTracker(typing.Protocol, typing.Generic[T]):
     def add(self, item: T) -> None: ...
 
@@ -44,6 +45,24 @@ class UserRepository(typing.Protocol):
     def get_seen(self) -> typing.Collection[models.User]: ...
 
     def delete(self, user: models.User) -> None: ...
+
+
+class DeviceRepository(typing.Protocol):
+    def add(self, device: models.Device) -> None: ...
+
+    def add_or_update(self, device_dicts: PreparedValues) -> None: ...
+
+    def get(self, identifier: str) -> models.Device | None: ...
+
+    def get_seen(self) -> typing.Collection[models.Device]: ...
+
+
+class ManufacturerRepository(typing.Protocol):
+    def add(self, manufacturer: models.Manufacturer) -> None: ...
+
+    def get(self, name: str) -> models.Manufacturer | None: ...
+
+    def get_seen(self) -> typing.Collection[models.Manufacturer]: ...
 
 
 class PatchRepository(typing.Protocol):
@@ -151,6 +170,64 @@ class SqlPatchRepository(PatchRepository):
         return patch
 
     def get_seen(self) -> typing.Collection[models.Patch]:
+        return self.seen_tracker.get_all()
+
+
+class SqlDeviceRepository(DeviceRepository):
+    def __init__(
+        self, session: Session, seen_tracker: SeenTracker[models.Device]
+    ) -> None:
+        super().__init__()
+        self.session = session
+        self.seen_tracker = seen_tracker
+
+    def add(self, device: models.Device) -> None:
+        self.session.add(device)
+        self.seen_tracker.add(device)
+
+    def add_or_update(self, device_dicts: PreparedValues) -> None:
+        # TODO: Should I use seen_tracker here?
+        stmt = insert(models.Device).values(device_dicts)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[models.Device.identifier],
+            set_={
+                "name": stmt.excluded.name,
+                "identifier": stmt.excluded.identifier,
+                "models": stmt.excluded.models,
+                "released": stmt.excluded.released,
+                "discontinued": stmt.excluded.discontinued,
+                "hardware_info": stmt.excluded.hardware_info,
+            },
+        )
+        self.session.execute(stmt)
+
+    def get(self, identifier: str) -> models.Device | None:
+        stmt = select(models.Device).where(models.Device.identifier == identifier)
+        device = self.session.scalar(stmt)
+        return device
+
+    def get_seen(self) -> typing.Collection[models.Device]:
+        return self.seen_tracker.get_all()
+
+
+class SqlManufacturerRepository(ManufacturerRepository):
+    def __init__(
+        self, session: Session, seen_tracker: SeenTracker[models.Manufacturer]
+    ) -> None:
+        super().__init__()
+        self.session = session
+        self.seen_tracker = seen_tracker
+
+    def add(self, manufacturer: models.Manufacturer) -> None:
+        self.session.add(manufacturer)
+        self.seen_tracker.add(manufacturer)
+
+    def get(self, name: str) -> models.Manufacturer | None:
+        stmt = select(models.Manufacturer).where(models.Manufacturer.name == name)
+        manufacturer = self.session.scalar(stmt)
+        return manufacturer
+
+    def get_seen(self) -> typing.Collection[models.Manufacturer]:
         return self.seen_tracker.get_all()
 
 

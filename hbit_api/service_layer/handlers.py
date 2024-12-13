@@ -122,6 +122,34 @@ def add_patch(
         uow.commit()
 
 
+# TODO: Refactor other handlers to work like this (do not us SQLite insert or make it work more like this)
+# TODO: If it stays as insert, it should take model (not dict) that will be created into DB and automatically mapped
+def add_device(
+    cmd: commands.CreateDevices,
+    services: svcs.Container,
+) -> None:
+    uow = services.get(unit_of_work.UnitOfWork)
+    with uow:
+        for device_in in cmd.device_batch:
+            manufacturer = uow.manufacturers.get(device_in.manufacturer)
+            if not manufacturer:
+                manufacturer = models.Manufacturer(name=device_in.manufacturer)
+                uow.manufacturers.add(manufacturer)
+
+            device = models.Device(
+                manufacturer=manufacturer,
+                name=device_in.name,
+                identifier=device_in.identifier,
+                models=device_in.models,
+                released=device_in.released,
+                discontinued=device_in.discontinued,
+                hardware_info=device_in.hardware_info,
+            )
+            uow.devices.add(device)
+
+        uow.commit()
+
+
 def add_cves(
     cmd: commands.CreateCVEs,
     services: svcs.Container,
@@ -339,6 +367,7 @@ COMMAND_HANDLERS: commands.CommandHandlerConfig = {
     commands.CreateCAPECs: add_capecs,
     commands.CreateCVEs: add_cves,
     commands.CreatePatches: add_patch,
+    commands.CreateDevices: add_device,
     commands.UpdateUser: update_user,
     commands.UpdateUserPassword: update_user_password,
     commands.DeleteUser: delete_user,

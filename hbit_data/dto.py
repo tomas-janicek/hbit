@@ -116,4 +116,17 @@ class CAPEC(BaseModel):
 ##########
 
 
-class iPhone(BaseModel): ...
+class HardwareInfo(BaseModel):
+    arch: LoweredString
+    boards: list[LoweredString]
+    soc: LoweredString
+
+
+class Device(BaseModel):
+    manufacturer: LoweredString
+    name: str
+    identifier: LoweredString
+    models: list[LoweredString]
+    released: datetime.date | None
+    discontinued: datetime.date | None
+    hardware_info: HardwareInfo

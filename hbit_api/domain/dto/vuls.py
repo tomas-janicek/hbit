@@ -36,6 +36,7 @@ class PatchDto(BaseModel):
     patch: int
     build: str
     released: datetime.date | None
+    affected_devices: list[str]
 
 
 #######

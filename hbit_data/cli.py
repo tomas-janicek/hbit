@@ -9,7 +9,7 @@ from hbit_data import (
     requests,
     settings,
 )
-from hbit_data.scrapers import capecs, cwes, patches, security_updates
+from hbit_data.scrapers import capecs, cwes, iphones, patches, security_updates
 
 cli = typer.Typer()
 
@@ -29,6 +29,23 @@ def scrape_security_updates() -> None:
     request = requests.HTTPXRequests(httpx.Client())
     update_scraper = security_updates.SecurityUpdateScraper(request)
     processor.process(update_scraper)
+
+
+@cli.command(name="scrape_iphones")
+def scrape_iphones() -> None:
+    hbit_request = requests.HTTPXRequests(requests.create_hbit_api_client())
+    hbit = clients.HBITClient(request=hbit_request, hbit_api_url=settings.HBIT_API_URL)
+    processor = processors.ItemProcessor[dto.Device](
+        batch_size=32,
+        pipelines=[
+            pipelines.JSONDumpPipeline[dto.Device]("scraped_iphones.json"),
+            pipelines.DevicesHBITPipeline(hbit),
+        ],
+    )
+
+    request = requests.HTTPXRequests(httpx.Client())
+    iphone_scraper = iphones.iPhoneScraper(request)
+    processor.process(iphone_scraper)
 
 
 @cli.command(name="scrape_cwes")

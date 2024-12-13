@@ -9,13 +9,13 @@ class PatchScraper(base.Scraper[dto.Patch]):
     def __init__(self, request: requests.Requests) -> None:
         self.request = request
         self.apple_db = "https://api.appledb.dev"
-        self.ios_pacthes_path = "/ios/iOS/main.json"
+        self.ios_patches_path = "/ios/iOS/main.json"
         self.min_version = normalizer.VersionStr.normalize_version("15.0.0")
 
     def scrape(self) -> typing.Iterator[dto.Patch]:
         data = self.request.get(
             base=self.apple_db,
-            path=self.ios_pacthes_path,
+            path=self.ios_patches_path,
             response_type=list[dict[str, typing.Any]],
         )
         if not data:

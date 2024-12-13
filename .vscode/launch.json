@@ -142,6 +142,21 @@
             "envFile": "${workspaceFolder}/.env",
         },
         {
+            "name": "Scrape iPhones",
+            "consoleTitle": "Scrape iPhones",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit_data/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "scrape_iphones"
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
             "name": "Migrate",
             "consoleTitle": "Migrate",
             "type": "debugpy",

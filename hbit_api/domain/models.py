@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from hbit_api.domain import events
 
 if typing.TYPE_CHECKING:
+    from hbit_api.domain.dto import devices as devices_dto
     from hbit_api.domain.dto import vuls as vuls_dto
 
 
@@ -78,11 +79,40 @@ class CVE:
     last_modified: datetime.datetime
     cvss: "vuls_dto.CVSSDto"
     cwes: list[CWE]
+    id: int | None = None
 
     events: list["events.Event"] = field(default_factory=list)
 
     def __hash__(self) -> int:
         return hash(self.cve_id)
+
+
+@dataclass
+class Manufacturer:
+    name: str
+    id: int | None = None
+
+    events: list["events.Event"] = field(default_factory=list)
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+
+@dataclass
+class Device:
+    manufacturer: Manufacturer
+    name: str
+    identifier: str
+    models: list[str]
+    released: datetime.date | None
+    discontinued: datetime.date | None
+    hardware_info: "devices_dto.HardwareInfo"
+    id: int | None = None
+
+    events: list["events.Event"] = field(default_factory=list)
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
 
 
 @dataclass
@@ -96,8 +126,8 @@ class Patch:
     patch: int
     released: datetime.date | None
     cves: list[CVE]
-    # TODO: Add device model
-    # devices: list[Device]
+    devices: list[Device]
+    id: int | None = None
 
     events: list["events.Event"] = field(default_factory=list)
 
