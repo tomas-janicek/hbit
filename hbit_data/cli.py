@@ -39,7 +39,7 @@ def scrape_cwes() -> None:
         batch_size=32,
         pipelines=[
             pipelines.JSONDumpPipeline[dto.CWE]("scraped_cwes.json"),
-            pipelines.CweHBITPipeline(hbit),
+            pipelines.CWEHBITPipeline(hbit),
         ],
     )
 
@@ -55,7 +55,7 @@ def scrape_capecs() -> None:
         batch_size=32,
         pipelines=[
             pipelines.JSONDumpPipeline[dto.CAPEC]("scraped_capecs.json"),
-            pipelines.CapecHBITPipeline(hbit),
+            pipelines.CAPECHBITPipeline(hbit),
         ],
     )
 

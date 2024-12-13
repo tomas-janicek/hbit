@@ -56,7 +56,6 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -138,10 +137,12 @@ dmypy.json
 # My ignores #
 ##############
 
+# Log Files
+*.log
+*.log.*
 
 # Ruff cache files
 .ruff_cache/
 
 # SQLite DB
-
 *.db

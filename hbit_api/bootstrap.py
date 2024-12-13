@@ -14,6 +14,7 @@ def bootstrap(registry: svcs.Registry) -> None:
     registry.register_factory(
         svc_type=deps.SessionFactoryDep,
         factory=session_factory,
+        ping=db.ping_db,
     )
     uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory=session_factory)
     registry.register_value(

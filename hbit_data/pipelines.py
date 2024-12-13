@@ -7,7 +7,7 @@ from hbit_data import clients, config, dto, processors
 ItemT = typing.TypeVar("ItemT")
 
 
-class CweHBITPipeline(processors.Pipeline[dto.CWE]):
+class CWEHBITPipeline(processors.Pipeline[dto.CWE]):
     def __init__(self, hbit_client: clients.HBITClient) -> None:
         self.hbit_client = hbit_client
 
@@ -56,7 +56,7 @@ class CVEHBITPipeline(processors.Pipeline[dto.CVE]):
     def end_processing(self) -> None: ...
 
 
-class CapecHBITPipeline(processors.Pipeline[dto.CAPEC]):
+class CAPECHBITPipeline(processors.Pipeline[dto.CAPEC]):
     def __init__(self, hbit_client: clients.HBITClient) -> None:
         self.hbit_client = hbit_client
 

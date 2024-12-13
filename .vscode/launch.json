@@ -50,6 +50,22 @@
             "justMyCode": false,
         },
         {
+            "name": "FastAPI Healthy",
+            "consoleTitle": "FastAPI Healthy",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/hbit_api/cli.py",
+            "args": [
+                "healthy"
+            ],
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "justMyCode": false,
+        },
+        {
             "name": "Init DB Data",
             "consoleTitle": "Init DB Data",
             "type": "debugpy",
