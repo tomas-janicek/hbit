@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 import jose
@@ -13,6 +14,8 @@ from hbit_api.domain import commands, events, models
 from hbit_api.domain.dto import users as dto
 
 from . import unit_of_work
+
+_log = logging.getLogger(__name__)
 
 
 def login_user(
@@ -65,28 +68,94 @@ def authenticate_user(
         )
 
 
-def add_author(
-    cmd: commands.CreateAuthor,
+def add_cwes(
+    cmd: commands.CreateCWEs,
     services: svcs.Container,
 ) -> None:
     uow = services.get(unit_of_work.UnitOfWork)
     with uow:
-        author = models.Author(name=cmd.name, books=[])
-        uow.authors.add(author)
+        cwes = [cwe.model_dump() for cwe in cmd.cwe_batch]
+        uow.cwes.add_or_update(cwes)
+
         uow.commit()
 
 
-def add_book(
-    cmd: commands.CreateBook,
+def add_capecs(
+    cmd: commands.CreateCAPECs,
     services: svcs.Container,
 ) -> None:
     uow = services.get(unit_of_work.UnitOfWork)
     with uow:
-        edition = uow.editions.get(name=cmd.name)
-        if edition is None:
-            edition = models.Edition(name=cmd.name, books=[])
-            uow.editions.add(edition)
-        edition.books.append(models.Book(name=cmd.name, authors=[]))
+        for capec_in in cmd.capec_batch:
+            uow.capecs.add_or_update(capec_in.model_dump(exclude={"cwe_ids"}))
+            capec = uow.capecs.get(capec_in.capec_id)
+            if not capec:
+                raise errors.DoesNotExist(
+                    f"CAPEC with ID {capec_in.capec_id} could not be created."
+                )
+
+            for cwe_id in capec_in.cwe_ids:
+                cwe = uow.cwes.get(cwe_id)
+                if not cwe:
+                    _log.warning(
+                        "Error mapping CAPEC with ID %s to CWE with ID %s. "
+                        "CWE with this ID does not exists.",
+                        capec.capec_id,
+                        cwe_id,
+                    )
+                    continue
+
+                cwe.capecs.append(capec)
+
+        uow.commit()
+
+
+def add_patch(
+    cmd: commands.CreatePatches,
+    services: svcs.Container,
+) -> None:
+    uow = services.get(unit_of_work.UnitOfWork)
+    with uow:
+        patches = [patch.model_dump() for patch in cmd.patches_batch]
+        uow.patches.add_or_update(patches)
+
+        uow.commit()
+
+
+def add_cves(
+    cmd: commands.CreateCVEs,
+    services: svcs.Container,
+) -> None:
+    uow = services.get(unit_of_work.UnitOfWork)
+    with uow:
+        patch = uow.patches.get(cmd.patch_build)
+        if not patch:
+            raise errors.DoesNotExist(
+                f"Error mapping CVEs to Patch with build {cmd.patch_build}. "
+                "Patch with this build does not exist.",
+            )
+
+        for cve_in in cmd.cve_batch:
+            uow.cves.add_or_update(cve_in.model_dump(exclude={"cwe_ids"}))
+            cve = uow.cves.get(cve_in.cve_id)
+            if not cve:
+                raise errors.DoesNotExist()
+
+            for cwe_id in cve_in.cwe_ids:
+                cwe = uow.cwes.get(cwe_id)
+                if not cwe:
+                    _log.warning(
+                        "Error mapping CVE with ID %s to CWE with ID %s. "
+                        "CWE with this ID does not exists.",
+                        cve.cve_id,
+                        cwe_id,
+                    )
+                    continue
+
+                cve.cwes.append(cwe)
+
+            patch.cves.append(cve)
+
         uow.commit()
 
 
@@ -265,9 +334,11 @@ EVENT_HANDLERS: events.EventHandlersConfig = {
 COMMAND_HANDLERS: commands.CommandHandlerConfig = {
     commands.LogInUser: login_user,
     commands.AuthenticateUser: authenticate_user,
-    commands.CreateAuthor: add_author,
-    commands.CreateBook: add_book,
     commands.CreateUser: add_user,
+    commands.CreateCWEs: add_cwes,
+    commands.CreateCAPECs: add_capecs,
+    commands.CreateCVEs: add_cves,
+    commands.CreatePatches: add_patch,
     commands.UpdateUser: update_user,
     commands.UpdateUserPassword: update_user_password,
     commands.DeleteUser: delete_user,

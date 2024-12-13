@@ -67,7 +67,7 @@ def recover_password(
     return generic_dto.Message(message="Password recovery email sent")
 
 
-@router.post("/reset-password/")
+@router.post("/reset-password")
 def reset_password(
     services: svcs.fastapi.DepContainer, reset_password: commands.ResetPassword
 ) -> generic_dto.Message:

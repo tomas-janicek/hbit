@@ -65,5 +65,81 @@
             },
             "justMyCode": false,
         },
+        {
+            "name": "Scrape Updates",
+            "consoleTitle": "Scrape Updates",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit_data/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "scrape_security_updates"
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Scrape CWEs",
+            "consoleTitle": "Scrape CWEs",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit_data/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "scrape_cwes"
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Scrape CAPECs",
+            "consoleTitle": "Scrape CAPECs",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit_data/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "scrape_capecs"
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Scrape Patches",
+            "consoleTitle": "Scrape Patches",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit_data/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "scrape_patches"
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Migrate",
+            "consoleTitle": "Migrate",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "alembic",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "upgrade",
+                "head"
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
     ]
 }

@@ -138,27 +138,10 @@ dmypy.json
 # My ignores #
 ##############
 
-# Download datasets
-/data_downloaded/*/**
 
 # Ruff cache files
 .ruff_cache/
 
-# Dataset Cache
-/cache/
-/runs/
-/data/
+# SQLite DB
 
-# MLFlow SQLite Database
-mlruns.db
-/mlruns/
-
-# Models
-/models/
-
-# Profiling
-profiling/trace_*.json
-profiling/*.prof
-memory_timeline.html
-stacks
-program.prof
+*.db

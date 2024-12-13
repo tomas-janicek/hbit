@@ -18,15 +18,15 @@ router = APIRouter()
 
 
 @router.get(
-    "/",
-    response_model=dto.UsersPublic,
+    "",
+    response_model=dto.Users,
 )
 def read_users(
     services: svcs.fastapi.DepContainer,
     super_user: deps.CurrentSuperUser,
     skip: int = 0,
     limit: int = 100,
-) -> dto.UsersPublic:
+) -> dto.Users:
     """
     Retrieve users.
     """
@@ -35,13 +35,15 @@ def read_users(
     return views.read_users(session, skip, limit)
 
 
-@router.post("/")
+@router.post("")
 def create_user(
-    *,
     services: svcs.fastapi.DepContainer,
     super_user: deps.CurrentSuperUser,
     body: dto.CreateUserDto,
 ) -> None:
+    """
+    Create user when logged in as admin.
+    """
     bus = services.get(messagebus.MessageBus)
     create_user = commands.CreateUser(
         email=body.email,
@@ -62,7 +64,6 @@ def create_user(
 
 @router.patch("/me")
 def update_user_me(
-    *,
     services: svcs.fastapi.DepContainer,
     current_user: deps.CurrentUser,
     body: dto.UserUpdateDto,
@@ -94,7 +95,6 @@ def update_user_me(
 
 @router.patch("/me/password", response_model=generic_dto.Message)
 def update_password_me(
-    *,
     services: svcs.fastapi.DepContainer,
     current_user: deps.CurrentUser,
     body: dto.UpdatePassword,
@@ -206,7 +206,6 @@ def read_user_by_id(
 
 @router.patch("/{user_id}")
 def update_user(
-    *,
     services: svcs.fastapi.DepContainer,
     super_user: deps.CurrentSuperUser,
     user_id: int,

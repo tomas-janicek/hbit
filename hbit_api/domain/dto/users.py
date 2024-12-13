@@ -24,7 +24,7 @@ class UserDto(BaseModel):
         )
 
 
-class UsersPublic(BaseModel):
+class Users(BaseModel):
     data: list[UserDto]
     count: int
 

@@ -1,4 +1,3 @@
-import typing
 from typing import Annotated
 
 import svcs
@@ -7,7 +6,6 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from hbit_api import errors
-from hbit_api.core import db
 from hbit_api.core.config import settings
 from hbit_api.domain import commands, models
 from hbit_api.domain.dto import users as dto
@@ -16,11 +14,6 @@ from hbit_api.service_layer import messagebus
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
 )
-
-
-def get_db() -> typing.Iterator[Session]:
-    with Session(db.engine) as session:
-        yield session
 
 
 def get_current_user(

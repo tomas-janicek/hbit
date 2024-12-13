@@ -11,9 +11,11 @@ if typing.TYPE_CHECKING:
 
 
 class UnitOfWork(typing.Protocol):
-    editions: repository.EditionRepository
     users: repository.UserRepository
-    authors: repository.AuthorRepository
+    patches: repository.PatchRepository
+    cves: repository.CVERepository
+    cwes: repository.CWERepository
+    capecs: repository.CAPECRepository
 
     def __enter__(self) -> typing.Self: ...
 
@@ -30,19 +32,28 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
         self.session_factory = session_factory
 
-    def __enter__(self):
         self.session = self.session_factory()
+
+    def __enter__(self) -> typing.Self:
         self.users = repository.SqlUserRepository(
             session=self.session,
             seen_tracker=repository.SeenSetTracker[models.User](),
         )
-        self.editions = repository.SqlEditionRepository(
+        self.patches = repository.SqlPatchRepository(
             session=self.session,
-            seen_tracker=repository.SeenSetTracker[models.Edition](),
+            seen_tracker=repository.SeenSetTracker[models.Patch](),
         )
-        self.authors = repository.SqlAuthorRepository(
+        self.cves = repository.SqlCVERepository(
             session=self.session,
-            seen_tracker=repository.SeenSetTracker[models.Author](),
+            seen_tracker=repository.SeenSetTracker[models.CVE](),
+        )
+        self.cwes = repository.SqlCWERepository(
+            session=self.session,
+            seen_tracker=repository.SeenSetTracker[models.CWE](),
+        )
+        self.capecs = repository.SqlCAPECRepository(
+            session=self.session,
+            seen_tracker=repository.SeenSetTracker[models.CAPEC](),
         )
         return self
 
@@ -51,20 +62,28 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         self.session.close()
 
     def collect_new_events(self) -> typing.Iterator["events.Event"]:
-        for bibliography in self.editions.get_seen():
-            while bibliography.events:
-                yield bibliography.events.pop(0)
-
         for user in self.users.get_seen():
             while user.events:
                 yield user.events.pop(0)
 
-        for author in self.authors.get_seen():
-            while author.events:
-                yield author.events.pop(0)
+        for patch in self.patches.get_seen():
+            while patch.events:
+                yield patch.events.pop(0)
 
-    def commit(self):
+        for cve in self.cves.get_seen():
+            while cve.events:
+                yield cve.events.pop(0)
+
+        for cwe in self.cwes.get_seen():
+            while cwe.events:
+                yield cwe.events.pop(0)
+
+        for capec in self.capecs.get_seen():
+            while capec.events:
+                yield capec.events.pop(0)
+
+    def commit(self) -> None:
         self.session.commit()
 
-    def rollback(self):
+    def rollback(self) -> None:
         self.session.rollback()

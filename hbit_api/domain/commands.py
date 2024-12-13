@@ -3,6 +3,8 @@ import typing
 import svcs
 from pydantic import BaseModel, EmailStr, Field, SecretStr
 
+from hbit_api.domain.dto import vuls
+
 
 class Command(BaseModel):
     pass
@@ -13,14 +15,6 @@ class CommandHandler(typing.Protocol):
 
 
 CommandHandlerConfig = dict[type[Command], CommandHandler]
-
-
-class CreateAuthor(Command):
-    name: str
-
-
-class CreateBook(Command):
-    name: str
 
 
 class CreateUser(Command):
@@ -62,3 +56,20 @@ class ResetPassword(Command):
 
 class DeleteUser(Command):
     id: int
+
+
+class CreateCWEs(Command):
+    cwe_batch: list[vuls.CWEDto]
+
+
+class CreateCAPECs(Command):
+    capec_batch: list[vuls.CAPECInDto]
+
+
+class CreatePatches(Command):
+    patches_batch: list[vuls.PatchDto]
+
+
+class CreateCVEs(Command):
+    patch_build: str
+    cve_batch: list[vuls.CVEDto]

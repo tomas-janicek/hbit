@@ -2,7 +2,7 @@ import os
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import URL, engine_from_config, pool
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -14,27 +14,30 @@ fileConfig(config.config_file_name)  # type: ignore
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-# target_metadata = None
+# from myapp import mymodel  # noqa: ERA001
+# target_metadata = mymodel.Base.metadata  # noqa: ERA001
+# target_metadata = None  # noqa: ERA001
 
-from hbit_api.adapters.orm import metadata
+from hbit_api.adapters.orm import metadata  # noqa: E402
 
 target_metadata = metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
+# my_important_option = config.get_main_option("my_important_option")  # noqa: ERA001
 # ... etc.
 
 
-def get_url():
-    user = os.getenv("POSTGRES_USER", "postgres")
-    password = os.getenv("POSTGRES_PASSWORD", "")
-    server = os.getenv("POSTGRES_SERVER", "db")
-    port = os.getenv("POSTGRES_PORT", "5432")
-    db = os.getenv("POSTGRES_DB", "app")
-    return f"postgresql+psycopg://{user}:{password}@{server}:{port}/{db}"
+def get_url() -> str:
+    db_url = URL.create(
+        drivername=os.getenv("DB_SCHEMA"),  # type: ignore
+        username=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_SERVER"),
+        port=os.getenv("DB_PORT"),  # type: ignore
+        database=os.getenv("DB_NAME"),
+    )
+    return str(db_url)
 
 
 def run_migrations_offline():

@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/test-email/",
+    "/test-email",
     dependencies=[Depends(deps.get_current_active_superuser)],
     status_code=201,
 )
