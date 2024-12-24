@@ -7,9 +7,6 @@ from sqlmodel import select
 from hbit_api.domain import models
 
 T = typing.TypeVar("T")
-PreparedValues = (
-    typing.Sequence[typing.Mapping[str, typing.Any]] | typing.Mapping[str, typing.Any]
-)
 
 
 # TODO: Where should I use seen tracker?
@@ -50,7 +47,7 @@ class UserRepository(typing.Protocol):
 class DeviceRepository(typing.Protocol):
     def add(self, device: models.Device) -> None: ...
 
-    def add_or_update(self, device_dicts: PreparedValues) -> None: ...
+    def add_or_update(self, device: models.Device) -> models.Device | None: ...
 
     def get(self, identifier: str) -> models.Device | None: ...
 
@@ -68,7 +65,7 @@ class ManufacturerRepository(typing.Protocol):
 class PatchRepository(typing.Protocol):
     def add(self, patch: models.Patch) -> None: ...
 
-    def add_or_update(self, patch_dicts: PreparedValues) -> None: ...
+    def add_or_update(self, patch: models.Patch) -> models.Patch | None: ...
 
     def get(self, build: str) -> models.Patch | None: ...
 
@@ -78,7 +75,7 @@ class PatchRepository(typing.Protocol):
 class CVERepository(typing.Protocol):
     def add(self, patch: models.CVE) -> None: ...
 
-    def add_or_update(self, cve_dicts: PreparedValues) -> None: ...
+    def add_or_update(self, cve: models.CVE) -> models.CVE | None: ...
 
     def get(self, cve_id: str) -> models.CVE | None: ...
 
@@ -88,7 +85,7 @@ class CVERepository(typing.Protocol):
 class CWERepository(typing.Protocol):
     def add(self, cwe: models.CWE) -> None: ...
 
-    def add_or_update(self, cwe_dicts: PreparedValues) -> None: ...
+    def add_or_update(self, cwe: models.CWE) -> models.CWE | None: ...
 
     def get(self, cwe_id: int) -> models.CWE | None: ...
 
@@ -98,7 +95,7 @@ class CWERepository(typing.Protocol):
 class CAPECRepository(typing.Protocol):
     def add(self, capec: models.CAPEC) -> None: ...
 
-    def add_or_update(self, capec_dicts: PreparedValues) -> None: ...
+    def add_or_update(self, capec: models.CAPEC) -> models.CAPEC | None: ...
 
     def get(self, capec_id: int) -> models.CAPEC | None: ...
 
@@ -151,8 +148,8 @@ class SqlPatchRepository(PatchRepository):
         self.session.add(patch)
         self.seen_tracker.add(patch)
 
-    def add_or_update(self, patch_dicts: PreparedValues) -> None:
-        stmt = insert(models.Patch).values(patch_dicts)
+    def add_or_update(self, patch: models.Patch) -> models.Patch | None:
+        stmt = insert(models.Patch).values(patch.dict())
         stmt = stmt.on_conflict_do_update(
             index_elements=[models.Patch.build],
             set_={
@@ -161,8 +158,11 @@ class SqlPatchRepository(PatchRepository):
                 "version": stmt.excluded.version,
                 "released": stmt.excluded.released,
             },
-        )
-        self.session.execute(stmt)
+        ).returning(models.Patch)
+        result = self.session.scalar(stmt)
+        if result:
+            self.seen_tracker.add(result)
+        return result
 
     def get(self, build: str) -> models.Patch | None:
         stmt = select(models.Patch).where(models.Patch.build == build)
@@ -185,9 +185,8 @@ class SqlDeviceRepository(DeviceRepository):
         self.session.add(device)
         self.seen_tracker.add(device)
 
-    def add_or_update(self, device_dicts: PreparedValues) -> None:
-        # TODO: Should I use seen_tracker here?
-        stmt = insert(models.Device).values(device_dicts)
+    def add_or_update(self, device: models.Device) -> models.Device | None:
+        stmt = insert(models.Device).values(device.dict())
         stmt = stmt.on_conflict_do_update(
             index_elements=[models.Device.identifier],
             set_={
@@ -198,8 +197,11 @@ class SqlDeviceRepository(DeviceRepository):
                 "discontinued": stmt.excluded.discontinued,
                 "hardware_info": stmt.excluded.hardware_info,
             },
-        )
-        self.session.execute(stmt)
+        ).returning(models.Device)
+        result = self.session.scalar(stmt)
+        if result:
+            self.seen_tracker.add(result)
+        return result
 
     def get(self, identifier: str) -> models.Device | None:
         stmt = select(models.Device).where(models.Device.identifier == identifier)
@@ -241,8 +243,8 @@ class SqlCVERepository(CVERepository):
         self.session.add(patch)
         self.seen_tracker.add(patch)
 
-    def add_or_update(self, cve_dicts: PreparedValues) -> None:
-        stmt = insert(models.CVE).values(cve_dicts)
+    def add_or_update(self, cve: models.CVE) -> models.CVE | None:
+        stmt = insert(models.CVE).values(cve.dict())
         stmt = stmt.on_conflict_do_update(
             index_elements=[models.CVE.cve_id],
             set_={
@@ -251,8 +253,11 @@ class SqlCVERepository(CVERepository):
                 "last_modified": stmt.excluded.last_modified,
                 "cvss": stmt.excluded.cvss,
             },
-        )
-        self.session.execute(stmt)
+        ).returning(models.CVE)
+        result = self.session.scalar(stmt)
+        if result:
+            self.seen_tracker.add(result)
+        return result
 
     def get(self, cve_id: str) -> models.CVE | None:
         stmt = select(models.CVE).where(models.CVE.cve_id == cve_id)
@@ -273,8 +278,8 @@ class SqlCWERepository(CWERepository):
         self.session.add(cwe)
         self.seen_tracker.add(cwe)
 
-    def add_or_update(self, cwe_dicts: PreparedValues) -> None:
-        stmt = insert(models.CWE).values(cwe_dicts)
+    def add_or_update(self, cwe: models.CWE) -> models.CWE | None:
+        stmt = insert(models.CWE).values(cwe.dict())
         stmt = stmt.on_conflict_do_update(
             index_elements=[models.CWE.cwe_id],  # type: ignore
             set_={
@@ -287,8 +292,11 @@ class SqlCWERepository(CWERepository):
                 "potential_mitigations": stmt.excluded.potential_mitigations,
                 "detection_methods": stmt.excluded.detection_methods,
             },
-        )
-        self.session.execute(stmt)
+        ).returning(models.CWE)
+        result = self.session.scalar(stmt)
+        if result:
+            self.seen_tracker.add(result)
+        return result
 
     def get(self, cwe_id: int) -> models.CWE | None:
         stmt = select(models.CWE).where(models.CWE.cwe_id == cwe_id)
@@ -311,8 +319,8 @@ class SqlCAPECRepository(CAPECRepository):
         self.session.add(capec)
         self.seen_tracker.add(capec)
 
-    def add_or_update(self, capec_dicts: PreparedValues) -> None:
-        stmt = insert(models.CAPEC).values(capec_dicts)
+    def add_or_update(self, capec: models.CAPEC) -> models.CAPEC | None:
+        stmt = insert(models.CAPEC).values(capec.dict())
         stmt = stmt.on_conflict_do_update(
             index_elements=[models.CAPEC.capec_id],  # type: ignore
             set_={
@@ -326,8 +334,11 @@ class SqlCAPECRepository(CAPECRepository):
                 "resources_required": stmt.excluded.resources_required,
                 "consequences": stmt.excluded.consequences,
             },
-        )
-        self.session.execute(stmt)
+        ).returning(models.CAPEC)
+        result = self.session.scalar(stmt)
+        if result:
+            self.seen_tracker.add(result)
+        return result
 
     def get(self, capec_id: int) -> models.CAPEC | None:
         stmt = select(models.CAPEC).where(models.CAPEC.capec_id == capec_id)

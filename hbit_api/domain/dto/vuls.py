@@ -3,7 +3,8 @@ import typing
 
 from pydantic import BaseModel
 
-from hbit_api.domain import models
+if typing.TYPE_CHECKING:
+    from hbit_api.domain import models
 
 ###################
 # Security Update #
@@ -67,7 +68,7 @@ class CWEDto(BaseModel):
     detection_methods: list[DetectionMethodDto]
 
     @classmethod
-    def from_cwe(cls, cwe: models.CWE) -> typing.Self:
+    def from_cwe(cls, cwe: "models.CWE") -> typing.Self:
         return cls(
             cwe_id=cwe.cwe_id,
             name=cwe.name,
@@ -129,7 +130,7 @@ class CAPECOutDto(BaseModel):
     consequences: list[str]
 
     @classmethod
-    def from_capec(cls, capec: models.CAPEC) -> typing.Self:
+    def from_capec(cls, capec: "models.CAPEC") -> typing.Self:
         return cls(
             capec_id=capec.capec_id,
             description=capec.description,

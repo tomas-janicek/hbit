@@ -2,11 +2,9 @@ import datetime
 import typing
 from dataclasses import dataclass, field
 
-from hbit_api.domain import events
-
-if typing.TYPE_CHECKING:
-    from hbit_api.domain.dto import devices as devices_dto
-    from hbit_api.domain.dto import vuls as vuls_dto
+from hbit_api.domain import events as domain_events
+from hbit_api.domain.dto import devices as devices_dto
+from hbit_api.domain.dto import vuls as vuls_dto
 
 
 @dataclass
@@ -18,18 +16,31 @@ class User:
     is_superuser: bool = False
     id: int | None = None
 
-    events: list["events.Event"] = field(default_factory=list)
+    events: list[domain_events.Event] = field(default_factory=list)
+
+    def __new__(cls, *args: typing.Any, **kwargs: typing.Any) -> typing.Self:
+        obj = super().__new__(cls)
+        obj.events = []
+        return obj
 
     def send_verification_email(self) -> None:
-        send_new_account_email = events.NotifyNewAccount(email=self.email)
+        send_new_account_email = domain_events.NotifyNewAccount(email=self.email)
         self.events.append(send_new_account_email)
 
     def send_password_recovery_email(self) -> None:
-        send_new_account_email = events.NotifyRecoverPassword(email=self.email)
+        send_new_account_email = domain_events.NotifyRecoverPassword(email=self.email)
         self.events.append(send_new_account_email)
 
     def __hash__(self) -> int:
         return hash(self.email)
+
+    def dict(self) -> dict[str, typing.Any]:
+        return {
+            "email": self.email,
+            "name": self.name,
+            "is_active": self.is_active,
+            "is_superuser": self.is_superuser,
+        }
 
 
 @dataclass
@@ -39,17 +50,36 @@ class CAPEC:
     extended_description: str
     likelihood_of_attack: str
     severity: str
-    execution_flow: list["vuls_dto.AttackStepDto"]
+    execution_flow: list[vuls_dto.AttackStepDto]
     prerequisites: list[str]
-    skills_required: list["vuls_dto.SkillDto"]
+    skills_required: list[vuls_dto.SkillDto]
     resources_required: list[str]
     consequences: list[str]
     id: int | None = None
 
-    events: list["events.Event"] = field(default_factory=list)
+    events: list[domain_events.Event] = field(default_factory=list)
+
+    def __new__(cls, *args: typing.Any, **kwargs: typing.Any) -> typing.Self:
+        obj = super().__new__(cls)
+        obj.events = []
+        return obj
 
     def __hash__(self) -> int:
         return hash(self.capec_id)
+
+    def dict(self) -> dict[str, typing.Any]:
+        return {
+            "capec_id": self.capec_id,
+            "description": self.description,
+            "extended_description": self.extended_description,
+            "likelihood_of_attack": self.likelihood_of_attack,
+            "severity": self.severity,
+            "execution_flow": self.execution_flow,
+            "prerequisites": self.prerequisites,
+            "skills_required": self.skills_required,
+            "resources_required": self.resources_required,
+            "consequences": self.consequences,
+        }
 
 
 @dataclass
@@ -60,15 +90,32 @@ class CWE:
     extended_description: str
     likelihood_of_exploit: str
     background_details: list[str]
-    potential_mitigations: list["vuls_dto.MitigationDto"]
-    detection_methods: list["vuls_dto.DetectionMethodDto"]
+    potential_mitigations: list[vuls_dto.MitigationDto]
+    detection_methods: list[vuls_dto.DetectionMethodDto]
     capecs: list[CAPEC]
     id: int | None = None
 
-    events: list["events.Event"] = field(default_factory=list)
+    events: list[domain_events.Event] = field(default_factory=list)
+
+    def __new__(cls, *args: typing.Any, **kwargs: typing.Any) -> typing.Self:
+        obj = super().__new__(cls)
+        obj.events = []
+        return obj
 
     def __hash__(self) -> int:
         return hash(self.cwe_id)
+
+    def dict(self) -> dict[str, typing.Any]:
+        return {
+            "cwe_id": self.cwe_id,
+            "name": self.name,
+            "description": self.description,
+            "extended_description": self.extended_description,
+            "likelihood_of_exploit": self.likelihood_of_exploit,
+            "background_details": self.background_details,
+            "potential_mitigations": self.potential_mitigations,
+            "detection_methods": self.detection_methods,
+        }
 
 
 @dataclass
@@ -77,14 +124,28 @@ class CVE:
     description: str
     published: datetime.datetime
     last_modified: datetime.datetime
-    cvss: "vuls_dto.CVSSDto"
+    cvss: vuls_dto.CVSSDto
     cwes: list[CWE]
     id: int | None = None
 
-    events: list["events.Event"] = field(default_factory=list)
+    events: list[domain_events.Event] = field(default_factory=list)
+
+    def __new__(cls, *args: typing.Any, **kwargs: typing.Any) -> typing.Self:
+        obj = super().__new__(cls)
+        obj.events = []
+        return obj
 
     def __hash__(self) -> int:
         return hash(self.cve_id)
+
+    def dict(self) -> dict[str, typing.Any]:
+        return {
+            "cve_id": self.cve_id,
+            "description": self.description,
+            "published": self.published,
+            "last_modified": self.last_modified,
+            "cvss": self.cvss,
+        }
 
 
 @dataclass
@@ -92,10 +153,18 @@ class Manufacturer:
     name: str
     id: int | None = None
 
-    events: list["events.Event"] = field(default_factory=list)
+    events: list[domain_events.Event] = field(default_factory=list)
+
+    def __new__(cls, *args: typing.Any, **kwargs: typing.Any) -> typing.Self:
+        obj = super().__new__(cls)
+        obj.events = []
+        return obj
 
     def __hash__(self) -> int:
         return hash(self.name)
+
+    def dict(self) -> dict[str, typing.Any]:
+        return {"name": self.name}
 
 
 @dataclass
@@ -106,13 +175,28 @@ class Device:
     models: list[str]
     released: datetime.date | None
     discontinued: datetime.date | None
-    hardware_info: "devices_dto.HardwareInfo"
+    hardware_info: devices_dto.HardwareInfo
     id: int | None = None
 
-    events: list["events.Event"] = field(default_factory=list)
+    events: list[domain_events.Event] = field(default_factory=list)
+
+    def __new__(cls, *args: typing.Any, **kwargs: typing.Any) -> typing.Self:
+        obj = super().__new__(cls)
+        obj.events = []
+        return obj
 
     def __hash__(self) -> int:
         return hash(self.identifier)
+
+    def dict(self) -> dict[str, typing.Any]:
+        return {
+            "name": self.name,
+            "identifier": self.identifier,
+            "models": self.models,
+            "released": self.released,
+            "discontinued": self.discontinued,
+            "hardware_info": self.hardware_info,
+        }
 
 
 @dataclass
@@ -129,7 +213,24 @@ class Patch:
     devices: list[Device]
     id: int | None = None
 
-    events: list["events.Event"] = field(default_factory=list)
+    events: list[domain_events.Event] = field(default_factory=list)
+
+    def __new__(cls, *args: typing.Any, **kwargs: typing.Any) -> typing.Self:
+        obj = super().__new__(cls)
+        obj.events = []
+        return obj
 
     def __hash__(self) -> int:
         return hash(self.build)
+
+    def dict(self) -> dict[str, typing.Any]:
+        return {
+            "build": self.build,
+            "os": self.os,
+            "name": self.name,
+            "version": self.version,
+            "major": self.major,
+            "minor": self.minor,
+            "patch": self.patch,
+            "released": self.released,
+        }

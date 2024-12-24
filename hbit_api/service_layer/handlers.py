@@ -74,8 +74,19 @@ def add_cwes(
 ) -> None:
     uow = services.get(unit_of_work.UnitOfWork)
     with uow:
-        cwes = [cwe.model_dump() for cwe in cmd.cwe_batch]
-        uow.cwes.add_or_update(cwes)
+        for cwe_in in cmd.cwe_batch:
+            cwe = models.CWE(
+                cwe_id=cwe_in.cwe_id,
+                name=cwe_in.name,
+                description=cwe_in.description,
+                extended_description=cwe_in.extended_description,
+                likelihood_of_exploit=cwe_in.likelihood_of_exploit,
+                background_details=cwe_in.background_details,
+                potential_mitigations=cwe_in.potential_mitigations,
+                detection_methods=cwe_in.detection_methods,
+                capecs=[],
+            )
+            uow.cwes.add_or_update(cwe)
 
         uow.commit()
 
@@ -87,8 +98,19 @@ def add_capecs(
     uow = services.get(unit_of_work.UnitOfWork)
     with uow:
         for capec_in in cmd.capec_batch:
-            uow.capecs.add_or_update(capec_in.model_dump(exclude={"cwe_ids"}))
-            capec = uow.capecs.get(capec_in.capec_id)
+            capec = models.CAPEC(
+                capec_id=capec_in.capec_id,
+                description=capec_in.description,
+                extended_description=capec_in.extended_description,
+                likelihood_of_attack=capec_in.likelihood_of_attack,
+                severity=capec_in.severity,
+                execution_flow=capec_in.execution_flow,
+                prerequisites=capec_in.prerequisites,
+                skills_required=capec_in.skills_required,
+                resources_required=capec_in.resources_required,
+                consequences=capec_in.consequences,
+            )
+            capec = uow.capecs.add_or_update(capec)
             if not capec:
                 raise errors.DoesNotExist(
                     f"CAPEC with ID {capec_in.capec_id} could not be created."
@@ -116,8 +138,20 @@ def add_patch(
 ) -> None:
     uow = services.get(unit_of_work.UnitOfWork)
     with uow:
-        patches = [patch.model_dump() for patch in cmd.patches_batch]
-        uow.patches.add_or_update(patches)
+        for patch_in in cmd.patches_batch:
+            patch = models.Patch(
+                build=patch_in.build,
+                os=patch_in.os,
+                name=patch_in.name,
+                version=patch_in.version,
+                major=patch_in.major,
+                minor=patch_in.minor,
+                patch=patch_in.patch,
+                released=patch_in.released,
+                cves=[],
+                devices=[],
+            )
+            uow.patches.add_or_update(patch)
 
         uow.commit()
 
@@ -145,7 +179,7 @@ def add_device(
                 discontinued=device_in.discontinued,
                 hardware_info=device_in.hardware_info,
             )
-            uow.devices.add(device)
+            uow.devices.add_or_update(device)
 
         uow.commit()
 
@@ -164,8 +198,15 @@ def add_cves(
             )
 
         for cve_in in cmd.cve_batch:
-            uow.cves.add_or_update(cve_in.model_dump(exclude={"cwe_ids"}))
-            cve = uow.cves.get(cve_in.cve_id)
+            cve = models.CVE(
+                cve_id=cve_in.cve_id,
+                description=cve_in.description,
+                published=cve_in.published,
+                last_modified=cve_in.last_modified,
+                cvss=cve_in.cvss,
+                cwes=[],
+            )
+            cve = uow.cves.add_or_update(cve)
             if not cve:
                 raise errors.DoesNotExist()
 
