@@ -148,7 +148,7 @@ docstring-code-line-length = "dynamic"
 #########################
 
 [tool.pyright]
-exclude = ["**/__pycache__", ".venv", "**/tests", "**/alembic"]
+exclude = ["**/__pycache__", ".venv", "**/alembic"]
 
 typeCheckingMode = "strict"
 

@@ -12,9 +12,6 @@ from hbit_api.views import vuls as views
 router = APIRouter()
 
 
-# TODO: Add exception hadlers
-
-
 @router.post(
     "/cwes/batch",
 )

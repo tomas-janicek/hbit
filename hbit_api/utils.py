@@ -1,7 +1,6 @@
 import typing
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from itertools import islice
 
 from jose import JWTError, jwt
 
@@ -78,14 +77,3 @@ def verify_password_reset_token(token: str) -> str | None:
         return str(decoded_token["sub"])
     except JWTError:
         return None
-
-
-def batched_iterator(
-    iterable: typing.Iterable[ItemT], batch_size: int
-) -> typing.Iterator[list[ItemT]]:
-    iterator = iter(iterable)  # Create an iterator from the iterable
-    while True:
-        batch = list(islice(iterator, batch_size))
-        if not batch:
-            break
-        yield batch

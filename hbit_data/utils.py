@@ -1,4 +1,5 @@
 import typing
+from itertools import islice
 from xml.etree import ElementTree as ET
 
 from url_normalize import url_normalize  # type: ignore
@@ -21,3 +22,14 @@ def get_all_text(element: ET.Element | None) -> str:
 def create_url(base: str, path: str) -> str:
     url = f"{base}/{path}"
     return url_normalize(url)  # type: ignore
+
+
+def batched_iterator(
+    iterable: typing.Iterable[ItemT], batch_size: int
+) -> typing.Iterator[list[ItemT]]:
+    iterator = iter(iterable)  # Create an iterator from the iterable
+    while True:
+        batch = list(islice(iterator, batch_size))
+        if not batch:
+            break
+        yield batch

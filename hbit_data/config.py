@@ -43,7 +43,7 @@ LOGGING = {
             "class": "logging.handlers.TimedRotatingFileHandler",
             "formatter": "default",
             "backupCount": "4",
-            "filename": "app.log",
+            "filename": "scrapers.log",
         },
     },
     "loggers": {

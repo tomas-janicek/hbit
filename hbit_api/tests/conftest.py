@@ -1,44 +1,37 @@
-from collections.abc import Generator
-
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import delete
-from sqlalchemy.orm import Session
+import svcs
 
-from hbit_api.core.config import settings
-from hbit_api.core.db import engine
-from hbit_api.domain import model
-from hbit_api.main import app
-from hbit_api.tests.utils.user import authentication_token_from_email
-from hbit_api.tests.utils.utils import get_superuser_token_headers
-
-# TODO: Create svcs testing container!
-
-
-@pytest.fixture(scope="session", autouse=True)
-def db() -> Generator[Session, None, None]:
-    with Session(engine) as session:
-        # TODO: Write custom init Data for test, this really should not be reused
-        # init_db(session)
-        yield session
-        statement = delete(model.User)
-        session.execute(statement)
-        session.commit()
+from hbit_api.adapters.email_sender import BaseEmailSender
+from hbit_api.service_layer import handlers, messagebus
+from hbit_api.tests.fakes import email_sender, unit_of_work
 
 
 @pytest.fixture(scope="module")
-def client() -> Generator[TestClient, None, None]:
-    with TestClient(app) as c:
-        yield c
+def services() -> svcs.Container:
+    registry = fake_bootsrap()
+    return svcs.Container(registry)
 
 
-@pytest.fixture(scope="module")
-def superuser_token_headers(client: TestClient) -> dict[str, str]:
-    return get_superuser_token_headers(client)
+def fake_bootsrap() -> svcs.Registry:
+    registry = svcs.Registry()
 
-
-@pytest.fixture(scope="module")
-def normal_user_token_headers(client: TestClient, db: Session) -> dict[str, str]:
-    return authentication_token_from_email(
-        client=client, email=settings.EMAIL_TEST_USER, db=db
+    uow = unit_of_work.FakeUnitOfWork()
+    registry.register_value(
+        svc_type=unit_of_work.UnitOfWork,
+        value=uow,
     )
+    bus = messagebus.MessageBus(
+        event_handlers=handlers.EVENT_HANDLERS,
+        command_handlers=handlers.COMMAND_HANDLERS,
+        registry=registry,
+    )
+    registry.register_value(
+        svc_type=messagebus.MessageBus,
+        value=bus,
+    )
+    sender = email_sender.FakeEmailSender()
+    registry.register_value(
+        svc_type=BaseEmailSender,
+        value=sender,
+    )
+    return registry

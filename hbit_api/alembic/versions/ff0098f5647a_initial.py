@@ -1,8 +1,8 @@
-"""patches
+"""initial
 
-Revision ID: f33b621cdd08
+Revision ID: ff0098f5647a
 Revises:
-Create Date: 2024-12-12 14:15:19.555412
+Create Date: 2024-12-25 17:41:57.913382
 
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "f33b621cdd08"
+revision = "ff0098f5647a"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -32,8 +32,8 @@ def upgrade():
         sa.Column("resources_required", sa.JSON(), nullable=True),
         sa.Column("consequences", sa.JSON(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("capec_id"),
     )
+    op.create_index(op.f("ix_capecs_capec_id"), "capecs", ["capec_id"], unique=True)
     op.create_table(
         "cves",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
@@ -43,8 +43,8 @@ def upgrade():
         sa.Column("last_modified", sa.DateTime(), nullable=True),
         sa.Column("cvss", sa.JSON(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("cve_id"),
     )
+    op.create_index(op.f("ix_cves_cve_id"), "cves", ["cve_id"], unique=True)
     op.create_table(
         "cwes",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
@@ -57,19 +57,31 @@ def upgrade():
         sa.Column("potential_mitigations", sa.JSON(), nullable=True),
         sa.Column("detection_methods", sa.JSON(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("cwe_id"),
+    )
+    op.create_index(op.f("ix_cwes_cwe_id"), "cwes", ["cwe_id"], unique=True)
+    op.create_table(
+        "manufacturers",
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("name", sa.Text(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(
+        op.f("ix_manufacturers_name"), "manufacturers", ["name"], unique=True
     )
     op.create_table(
         "patches",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("build", sa.Text(), nullable=True),
         sa.Column("os", sa.Text(), nullable=True),
         sa.Column("name", sa.Text(), nullable=True),
         sa.Column("version", sa.Text(), nullable=True),
-        sa.Column("build", sa.Text(), nullable=True),
+        sa.Column("major", sa.Integer(), nullable=True),
+        sa.Column("minor", sa.Integer(), nullable=True),
+        sa.Column("patch", sa.Integer(), nullable=True),
         sa.Column("released", sa.Date(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("build"),
     )
+    op.create_index(op.f("ix_patches_build"), "patches", ["build"], unique=True)
     op.create_table(
         "users",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
@@ -79,67 +91,112 @@ def upgrade():
         sa.Column("is_active", sa.Boolean(), nullable=True),
         sa.Column("is_superuser", sa.Boolean(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("email"),
+    )
+    op.create_index(op.f("ix_users_email"), "users", ["email"], unique=True)
+    op.create_table(
+        "devices",
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("identifier", sa.Text(), nullable=True),
+        sa.Column("manufacturer_id", sa.Integer(), nullable=True),
+        sa.Column("name", sa.Text(), nullable=True),
+        sa.Column("models", sa.JSON(), nullable=True),
+        sa.Column("released", sa.Date(), nullable=True),
+        sa.Column("discontinued", sa.Date(), nullable=True),
+        sa.Column("hardware_info", sa.JSON(), nullable=True),
+        sa.ForeignKeyConstraint(
+            ["manufacturer_id"], ["manufacturers.id"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(
+        op.f("ix_devices_identifier"), "devices", ["identifier"], unique=True
     )
     op.create_table(
         "map_capec_to_cwe",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("capec_id", sa.Integer(), nullable=True),
         sa.Column("cwe_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["capec_id"],
-            ["capecs.id"],
-        ),
-        sa.ForeignKeyConstraint(
-            ["cwe_id"],
-            ["cwes.id"],
-        ),
+        sa.ForeignKeyConstraint(["capec_id"], ["capecs.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["cwe_id"], ["cwes.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("capec_id", "cwe_id", name="unique_capec_id_cwe_id"),
+    )
+    op.create_index(
+        "index_capec_id_cwe_id",
+        "map_capec_to_cwe",
+        ["capec_id", "cwe_id"],
+        unique=False,
     )
     op.create_table(
         "map_cve_to_patch",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("cve_id", sa.Integer(), nullable=True),
         sa.Column("patch_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["cve_id"],
-            ["cves.id"],
-        ),
-        sa.ForeignKeyConstraint(
-            ["patch_id"],
-            ["patches.id"],
-        ),
+        sa.ForeignKeyConstraint(["cve_id"], ["cves.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["patch_id"], ["patches.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("cve_id", "patch_id", name="unique_cve_id_patch_id"),
+    )
+    op.create_index(
+        "index_cve_id_patch_id",
+        "map_cve_to_patch",
+        ["cve_id", "patch_id"],
+        unique=False,
     )
     op.create_table(
         "map_cwe_to_cve",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("cwe_id", sa.Integer(), nullable=True),
         sa.Column("cve_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["cve_id"],
-            ["cves.id"],
-        ),
-        sa.ForeignKeyConstraint(
-            ["cwe_id"],
-            ["cwes.id"],
-        ),
+        sa.ForeignKeyConstraint(["cve_id"], ["cves.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["cwe_id"], ["cwes.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("cwe_id", "cve_id", name="unique_cwe_id_cve_id"),
+    )
+    op.create_index(
+        "index_cwe_id_cve_id", "map_cwe_to_cve", ["cwe_id", "cve_id"], unique=False
+    )
+    op.create_table(
+        "map_patch_to_device",
+        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("patch_id", sa.Integer(), nullable=True),
+        sa.Column("device_id", sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(["device_id"], ["devices.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["patch_id"], ["patches.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("patch_id", "device_id", name="unique_patch_id_device_id"),
+    )
+    op.create_index(
+        "index_patch_id_device_id",
+        "map_patch_to_device",
+        ["patch_id", "device_id"],
+        unique=False,
     )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index("index_patch_id_device_id", table_name="map_patch_to_device")
+    op.drop_table("map_patch_to_device")
+    op.drop_index("index_cwe_id_cve_id", table_name="map_cwe_to_cve")
     op.drop_table("map_cwe_to_cve")
+    op.drop_index("index_cve_id_patch_id", table_name="map_cve_to_patch")
     op.drop_table("map_cve_to_patch")
+    op.drop_index("index_capec_id_cwe_id", table_name="map_capec_to_cwe")
     op.drop_table("map_capec_to_cwe")
+    op.drop_index(op.f("ix_devices_identifier"), table_name="devices")
+    op.drop_table("devices")
+    op.drop_index(op.f("ix_users_email"), table_name="users")
     op.drop_table("users")
+    op.drop_index(op.f("ix_patches_build"), table_name="patches")
     op.drop_table("patches")
+    op.drop_index(op.f("ix_manufacturers_name"), table_name="manufacturers")
+    op.drop_table("manufacturers")
+    op.drop_index(op.f("ix_cwes_cwe_id"), table_name="cwes")
     op.drop_table("cwes")
+    op.drop_index(op.f("ix_cves_cve_id"), table_name="cves")
     op.drop_table("cves")
+    op.drop_index(op.f("ix_capecs_capec_id"), table_name="capecs")
     op.drop_table("capecs")
     # ### end Alembic commands ###

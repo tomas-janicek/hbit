@@ -35,6 +35,8 @@ class Settings(BaseSettings):
 
     BASE_DIR: Path = Path(__file__).parent.parent
 
+    LOGGING_LEVEL: str = "INFO"
+
     @computed_field
     @property
     def server_host(self) -> str:
@@ -119,3 +121,55 @@ class Settings(BaseSettings):
 
 
 settings = Settings()  # type: ignore
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {"format": "[%(asctime)s][%(levelname)s]: %(message)s"},
+        "rich": {"format": "%(message)s", "datefmt": "[%x %X]"},
+    },
+    "handlers": {
+        "console": {
+            "level": settings.LOGGING_LEVEL,
+            "class": "rich.logging.RichHandler",
+            "formatter": "rich",
+            "markup": True,
+            "show_path": True,
+        },
+        "file": {
+            "level": settings.LOGGING_LEVEL,
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "formatter": "default",
+            "backupCount": "4",
+            "filename": "api.log",
+        },
+    },
+    "loggers": {
+        "root": {
+            "level": settings.LOGGING_LEVEL,
+            "handlers": ["console", "file"],
+        },
+        "uvicorn": {
+            "handlers": ["console", "file"],
+            "level": "TRACE",
+            "propagate": False,
+        },
+        "uvicorn.access": {
+            "handlers": ["console", "file"],
+            "level": "TRACE",
+            "propagate": False,
+        },
+        "uvicorn.error": {
+            "handlers": ["console", "file"],
+            "level": "TRACE",
+            "propagate": False,
+        },
+        "uvicorn.asgi": {
+            "handlers": ["console", "file"],
+            "level": "TRACE",
+            "propagate": False,
+        },
+    },
+}

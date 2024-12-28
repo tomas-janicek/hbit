@@ -1,3 +1,5 @@
+import logging.config
+
 import sentry_sdk
 import svcs
 from fastapi import FastAPI
@@ -7,7 +9,7 @@ from starlette.responses import RedirectResponse
 
 from hbit_api.api.main import api_router
 from hbit_api.bootstrap import bootstrap
-from hbit_api.core.config import settings
+from hbit_api.core.config import LOGGING, settings
 
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
@@ -54,3 +56,6 @@ async def redirect_to_docs() -> str:
 
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+
+logging.config.dictConfig(config=LOGGING)

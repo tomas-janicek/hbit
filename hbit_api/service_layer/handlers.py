@@ -86,7 +86,10 @@ def add_cwes(
                 detection_methods=cwe_in.detection_methods,
                 capecs=[],
             )
-            uow.cwes.add_or_update(cwe)
+
+            cwe = uow.cwes.add_or_update(cwe)
+            if not cwe:
+                _log.error("CWE with ID %s could not be created.", cwe_in.cwe_id)
 
         uow.commit()
 
@@ -110,11 +113,11 @@ def add_capecs(
                 resources_required=capec_in.resources_required,
                 consequences=capec_in.consequences,
             )
+
             capec = uow.capecs.add_or_update(capec)
             if not capec:
-                raise errors.DoesNotExist(
-                    f"CAPEC with ID {capec_in.capec_id} could not be created."
-                )
+                _log.error("CAPEC with ID %s could not be created.", capec_in.capec_id)
+                continue
 
             for cwe_id in capec_in.cwe_ids:
                 cwe = uow.cwes.get(cwe_id)
@@ -151,13 +154,13 @@ def add_patch(
                 cves=[],
                 devices=[],
             )
-            uow.patches.add_or_update(patch)
+            patch = uow.patches.add_or_update(patch)
+            if not patch:
+                _log.error("Patch with build %s could not be created.", patch_in.build)
 
         uow.commit()
 
 
-# TODO: Refactor other handlers to work like this (do not us SQLite insert or make it work more like this)
-# TODO: If it stays as insert, it should take model (not dict) that will be created into DB and automatically mapped
 def add_device(
     cmd: commands.CreateDevices,
     services: svcs.Container,
@@ -179,7 +182,12 @@ def add_device(
                 discontinued=device_in.discontinued,
                 hardware_info=device_in.hardware_info,
             )
-            uow.devices.add_or_update(device)
+            device = uow.devices.add_or_update(device)
+            if not device:
+                _log.error(
+                    "Device with identifier %s could not be created.",
+                    device_in.identifier,
+                )
 
         uow.commit()
 
@@ -208,7 +216,8 @@ def add_cves(
             )
             cve = uow.cves.add_or_update(cve)
             if not cve:
-                raise errors.DoesNotExist()
+                _log.error("CVE with ID %s could not be created.", cve_in.cve_id)
+                continue
 
             for cwe_id in cve_in.cwe_ids:
                 cwe = uow.cwes.get(cwe_id)

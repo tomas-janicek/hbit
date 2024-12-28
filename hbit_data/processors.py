@@ -1,7 +1,6 @@
 import typing
 
-from hbit_api import utils
-from hbit_data import scrapers
+from hbit_data import scrapers, utils
 
 ItemT = typing.TypeVar("ItemT")
 

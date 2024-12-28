@@ -9,7 +9,6 @@ from hbit_api.domain import models
 T = typing.TypeVar("T")
 
 
-# TODO: Where should I use seen tracker?
 class SeenTracker(typing.Protocol, typing.Generic[T]):
     def add(self, item: T) -> None: ...
 
@@ -73,7 +72,7 @@ class PatchRepository(typing.Protocol):
 
 
 class CVERepository(typing.Protocol):
-    def add(self, patch: models.CVE) -> None: ...
+    def add(self, cve: models.CVE) -> None: ...
 
     def add_or_update(self, cve: models.CVE) -> models.CVE | None: ...
 
@@ -111,7 +110,6 @@ class SqlUserRepository(UserRepository):
     def __init__(
         self, session: Session, seen_tracker: SeenTracker[models.User]
     ) -> None:
-        super().__init__()
         self.session = session
         self.seen_tracker = seen_tracker
 
@@ -122,25 +120,34 @@ class SqlUserRepository(UserRepository):
     def get(self, email: str) -> models.User | None:
         stmt = select(models.User).where(models.User.email == email)
         user = self.session.scalar(stmt)
+
+        if user:
+            self.seen_tracker.add(user)
+
         return user
 
     def get_by_id(self, id: int) -> models.User | None:
         stmt = select(models.User).where(models.User.id == id)
         user = self.session.scalar(stmt)
-        return user
 
-    def get_seen(self) -> typing.Collection[models.User]:
-        return self.seen_tracker.get_all()
+        if user:
+            self.seen_tracker.add(user)
+
+        return user
 
     def delete(self, user: models.User) -> None:
         self.session.delete(user)
+        # TODO: Does this sill work even if I delete user?
+        self.seen_tracker.add(user)
+
+    def get_seen(self) -> typing.Collection[models.User]:
+        return self.seen_tracker.get_all()
 
 
 class SqlPatchRepository(PatchRepository):
     def __init__(
         self, session: Session, seen_tracker: SeenTracker[models.Patch]
     ) -> None:
-        super().__init__()
         self.session = session
         self.seen_tracker = seen_tracker
 
@@ -159,14 +166,20 @@ class SqlPatchRepository(PatchRepository):
                 "released": stmt.excluded.released,
             },
         ).returning(models.Patch)
+
         result = self.session.scalar(stmt)
         if result:
             self.seen_tracker.add(result)
+
         return result
 
     def get(self, build: str) -> models.Patch | None:
         stmt = select(models.Patch).where(models.Patch.build == build)
         patch = self.session.scalar(stmt)
+
+        if patch:
+            self.seen_tracker.add(patch)
+
         return patch
 
     def get_seen(self) -> typing.Collection[models.Patch]:
@@ -177,7 +190,6 @@ class SqlDeviceRepository(DeviceRepository):
     def __init__(
         self, session: Session, seen_tracker: SeenTracker[models.Device]
     ) -> None:
-        super().__init__()
         self.session = session
         self.seen_tracker = seen_tracker
 
@@ -198,14 +210,20 @@ class SqlDeviceRepository(DeviceRepository):
                 "hardware_info": stmt.excluded.hardware_info,
             },
         ).returning(models.Device)
+
         result = self.session.scalar(stmt)
         if result:
             self.seen_tracker.add(result)
+
         return result
 
     def get(self, identifier: str) -> models.Device | None:
         stmt = select(models.Device).where(models.Device.identifier == identifier)
         device = self.session.scalar(stmt)
+
+        if device:
+            self.seen_tracker.add(device)
+
         return device
 
     def get_seen(self) -> typing.Collection[models.Device]:
@@ -216,7 +234,6 @@ class SqlManufacturerRepository(ManufacturerRepository):
     def __init__(
         self, session: Session, seen_tracker: SeenTracker[models.Manufacturer]
     ) -> None:
-        super().__init__()
         self.session = session
         self.seen_tracker = seen_tracker
 
@@ -227,6 +244,10 @@ class SqlManufacturerRepository(ManufacturerRepository):
     def get(self, name: str) -> models.Manufacturer | None:
         stmt = select(models.Manufacturer).where(models.Manufacturer.name == name)
         manufacturer = self.session.scalar(stmt)
+
+        if manufacturer:
+            self.seen_tracker.add(manufacturer)
+
         return manufacturer
 
     def get_seen(self) -> typing.Collection[models.Manufacturer]:
@@ -235,13 +256,12 @@ class SqlManufacturerRepository(ManufacturerRepository):
 
 class SqlCVERepository(CVERepository):
     def __init__(self, session: Session, seen_tracker: SeenTracker[models.CVE]) -> None:
-        super().__init__()
         self.session = session
         self.seen_tracker = seen_tracker
 
-    def add(self, patch: models.CVE) -> None:
-        self.session.add(patch)
-        self.seen_tracker.add(patch)
+    def add(self, cve: models.CVE) -> None:
+        self.session.add(cve)
+        self.seen_tracker.add(cve)
 
     def add_or_update(self, cve: models.CVE) -> models.CVE | None:
         stmt = insert(models.CVE).values(cve.dict())
@@ -254,6 +274,7 @@ class SqlCVERepository(CVERepository):
                 "cvss": stmt.excluded.cvss,
             },
         ).returning(models.CVE)
+
         result = self.session.scalar(stmt)
         if result:
             self.seen_tracker.add(result)
@@ -261,8 +282,12 @@ class SqlCVERepository(CVERepository):
 
     def get(self, cve_id: str) -> models.CVE | None:
         stmt = select(models.CVE).where(models.CVE.cve_id == cve_id)
-        patch = self.session.scalar(stmt)
-        return patch
+        cve = self.session.scalar(stmt)
+
+        if cve:
+            self.seen_tracker.add(cve)
+
+        return cve
 
     def get_seen(self) -> typing.Collection[models.CVE]:
         return self.seen_tracker.get_all()
@@ -270,7 +295,6 @@ class SqlCVERepository(CVERepository):
 
 class SqlCWERepository(CWERepository):
     def __init__(self, session: Session, seen_tracker: SeenTracker[models.CWE]) -> None:
-        super().__init__()
         self.session = session
         self.seen_tracker = seen_tracker
 
@@ -293,14 +317,20 @@ class SqlCWERepository(CWERepository):
                 "detection_methods": stmt.excluded.detection_methods,
             },
         ).returning(models.CWE)
+
         result = self.session.scalar(stmt)
         if result:
             self.seen_tracker.add(result)
+
         return result
 
     def get(self, cwe_id: int) -> models.CWE | None:
         stmt = select(models.CWE).where(models.CWE.cwe_id == cwe_id)
         cwe = self.session.scalar(stmt)
+
+        if cwe:
+            self.seen_tracker.add(cwe)
+
         return cwe
 
     def get_seen(self) -> typing.Collection[models.CWE]:
@@ -311,7 +341,6 @@ class SqlCAPECRepository(CAPECRepository):
     def __init__(
         self, session: Session, seen_tracker: SeenTracker[models.CAPEC]
     ) -> None:
-        super().__init__()
         self.session = session
         self.seen_tracker = seen_tracker
 
@@ -336,13 +365,19 @@ class SqlCAPECRepository(CAPECRepository):
             },
         ).returning(models.CAPEC)
         result = self.session.scalar(stmt)
+
         if result:
             self.seen_tracker.add(result)
+
         return result
 
     def get(self, capec_id: int) -> models.CAPEC | None:
         stmt = select(models.CAPEC).where(models.CAPEC.capec_id == capec_id)
         capec = self.session.scalar(stmt)
+
+        if capec:
+            self.seen_tracker.add(capec)
+
         return capec
 
     def get_seen(self) -> typing.Collection[models.CAPEC]:

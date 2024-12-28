@@ -10,9 +10,6 @@ from hbit_api.service_layer import messagebus
 router = APIRouter()
 
 
-# TODO: Add exception hadlers
-
-
 @router.post(
     "/batch",
 )
