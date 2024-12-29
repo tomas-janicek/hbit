@@ -6,13 +6,8 @@ from hbit_api.service_layer import handlers, messagebus
 from hbit_api.tests.fakes import email_sender, unit_of_work
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def services() -> svcs.Container:
-    registry = fake_bootsrap()
-    return svcs.Container(registry)
-
-
-def fake_bootsrap() -> svcs.Registry:
     registry = svcs.Registry()
 
     uow = unit_of_work.FakeUnitOfWork()
@@ -34,4 +29,4 @@ def fake_bootsrap() -> svcs.Registry:
         svc_type=BaseEmailSender,
         value=sender,
     )
-    return registry
+    return svcs.Container(registry)

@@ -72,33 +72,40 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
         self.session.close()
 
     def collect_new_events(self) -> typing.Iterator["events.Event"]:  # noqa: C901
-        for user in self.users.get_seen():
-            while user.events:
-                yield user.events.pop(0)
+        if hasattr(self, "users"):
+            for user in self.users.get_seen():
+                while user.events:
+                    yield user.events.pop(0)
 
-        for patch in self.patches.get_seen():
-            while patch.events:
-                yield patch.events.pop(0)
+        if hasattr(self, "patches"):
+            for patch in self.patches.get_seen():
+                while patch.events:
+                    yield patch.events.pop(0)
 
-        for cve in self.cves.get_seen():
-            while cve.events:
-                yield cve.events.pop(0)
+        if hasattr(self, "cves"):
+            for cve in self.cves.get_seen():
+                while cve.events:
+                    yield cve.events.pop(0)
 
-        for cwe in self.cwes.get_seen():
-            while cwe.events:
-                yield cwe.events.pop(0)
+        if hasattr(self, "cwes"):
+            for cwe in self.cwes.get_seen():
+                while cwe.events:
+                    yield cwe.events.pop(0)
 
-        for capec in self.capecs.get_seen():
-            while capec.events:
-                yield capec.events.pop(0)
+        if hasattr(self, "capecs"):
+            for capec in self.capecs.get_seen():
+                while capec.events:
+                    yield capec.events.pop(0)
 
-        for device in self.devices.get_seen():
-            while device.events:
-                yield device.events.pop(0)
+        if hasattr(self, "devices"):
+            for device in self.devices.get_seen():
+                while device.events:
+                    yield device.events.pop(0)
 
-        for manufacturer in self.manufacturers.get_seen():
-            while manufacturer.events:
-                yield manufacturer.events.pop(0)
+        if hasattr(self, "manufacturers"):
+            for manufacturer in self.manufacturers.get_seen():
+                while manufacturer.events:
+                    yield manufacturer.events.pop(0)
 
     def commit(self) -> None:
         self.session.commit()

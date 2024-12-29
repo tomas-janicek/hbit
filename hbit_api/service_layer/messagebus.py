@@ -59,6 +59,6 @@ class MessageBus:
             result = handler(cmd=command, services=container)
             self.queue.extend(uow.collect_new_events())
             return result
-        except Exception:
+        except Exception as error:
             logger.exception("Exception handling command %s", command)
-            raise
+            raise error
