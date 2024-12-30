@@ -52,7 +52,7 @@ def in_memory_sqlite_db() -> Engine:
 
 
 @pytest.fixture
-def sqlite_session_factory(
+def session_factory(
     in_memory_sqlite_db: Engine,
 ) -> typing.Iterator[sessionmaker[Session]]:
     start_mappers()
@@ -61,5 +61,5 @@ def sqlite_session_factory(
 
 
 @pytest.fixture
-def session(sqlite_session_factory: sessionmaker[Session]) -> Session:
-    return sqlite_session_factory()
+def session(session_factory: sessionmaker[Session]) -> Session:
+    return session_factory()

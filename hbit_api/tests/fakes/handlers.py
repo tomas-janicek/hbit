@@ -38,7 +38,10 @@ class FakeEventRaising(events.Event):
     exc_text: str
 
 
-class MissingMessage: ...
+class MissingEvent(events.Event): ...
+
+
+class MissingCommand(commands.Command): ...
 
 
 ############

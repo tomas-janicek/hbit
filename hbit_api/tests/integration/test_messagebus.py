@@ -70,7 +70,19 @@ def test_event_raising_exception(
     assert fake_event.exc_text in caplog.text
 
 
-def test_missing_message(services: svcs.Container) -> None:
+def test_missing_event(
+    services: svcs.Container, caplog: pytest.LogCaptureFixture
+) -> None:
     bus = services.get(messagebus.MessageBus)
 
-    bus.handle(handlers.MissingMessage())  # type: ignore
+    with pytest.raises(expected_exception=KeyError):
+        bus.handle(handlers.MissingEvent())
+
+
+def test_missing_command(
+    services: svcs.Container, caplog: pytest.LogCaptureFixture
+) -> None:
+    bus = services.get(messagebus.MessageBus)
+
+    with pytest.raises(expected_exception=KeyError):
+        bus.handle(handlers.MissingCommand())
