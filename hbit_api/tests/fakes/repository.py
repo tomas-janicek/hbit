@@ -22,6 +22,8 @@ class FakeUserRepository(repository.UserRepository):
 
     def add(self, user: models.User) -> None:
         self.data.append(user)
+        # set if to object index in data list
+        user.id = self.data.index(user)
         self.seen_tracker.add(user)
 
     def get(self, email: str) -> models.User | None:

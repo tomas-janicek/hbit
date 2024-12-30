@@ -20,7 +20,6 @@ class FakeUnitOfWork(UnitOfWork):
     def __init__(self) -> None:
         self.commited = False
 
-    def __enter__(self) -> typing.Self:
         self.users = repository.FakeUserRepository(  # type: ignore
             data=[],
             seen_tracker=SeenSetTracker(),
@@ -49,6 +48,8 @@ class FakeUnitOfWork(UnitOfWork):
             data=[],
             seen_tracker=SeenSetTracker(),
         )
+
+    def __enter__(self) -> typing.Self:
         return self
 
     def __exit__(self, *args: typing.Any) -> None:

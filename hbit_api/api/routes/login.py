@@ -3,7 +3,7 @@ from typing import Annotated
 import svcs
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import EmailStr
+from pydantic import EmailStr, SecretStr
 
 from hbit_api import errors
 from hbit_api.api.deps import CurrentUser
@@ -25,12 +25,12 @@ def login_access_token(
     """
     bus = services.get(messagebus.MessageBus)
     authenticate = commands.LogInUser(
-        email=form_data.username, password=form_data.password
+        email=form_data.username, password=SecretStr(form_data.password)
     )
 
     try:
         token = bus.handle(authenticate)
-    except errors.DoesNotExist:
+    except (errors.DoesNotExist, errors.IncorrectPassword):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     except errors.InActiveUser:
         raise HTTPException(status_code=400, detail="Inactive user")

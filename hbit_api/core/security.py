@@ -1,5 +1,4 @@
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 import argon2
 from jose import jwt
@@ -12,7 +11,7 @@ ph = argon2.PasswordHasher()
 ALGORITHM = "HS256"
 
 
-def create_access_token(subject: str | Any, expires_delta: timedelta) -> str:
+def create_access_token(subject: str, expires_delta: timedelta) -> str:
     expire = datetime.now(UTC) + expires_delta
     to_encode = {"exp": expire, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
@@ -20,7 +19,10 @@ def create_access_token(subject: str | Any, expires_delta: timedelta) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return ph.verify(hashed_password, plain_password)
+    try:
+        return ph.verify(hashed_password, plain_password)
+    except argon2.exceptions.VerifyMismatchError:
+        return False
 
 
 def get_password_hash(password: str) -> str:

@@ -38,7 +38,7 @@ class UpdateUserPassword(Command):
 
 class LogInUser(Command):
     email: str
-    password: str
+    password: SecretStr
 
 
 class AuthenticateUser(Command):

@@ -27,15 +27,17 @@ def login_user(
         user = uow.users.get(email=cmd.email)
         if not user:
             raise errors.DoesNotExist()
-        elif not security.verify_password(cmd.password, user.hashed_password):
-            raise errors.DoesNotExist()
+        elif not security.verify_password(
+            cmd.password.get_secret_value(), user.hashed_password
+        ):
+            raise errors.IncorrectPassword()
         elif not user.is_active:
             raise errors.InActiveUser()
 
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         return dto.Token(
             access_token=security.create_access_token(
-                user.id, expires_delta=access_token_expires
+                user.email, expires_delta=access_token_expires
             )
         )
 
@@ -53,7 +55,7 @@ def authenticate_user(
     except (jose.JWTError, ValidationError) as error:
         raise errors.InvalidToken() from error
     with uow:
-        user = uow.users.get_by_id(id=int(token_data.sub))
+        user = uow.users.get(email=token_data.sub)
 
         if not user:
             raise errors.DoesNotExist()
