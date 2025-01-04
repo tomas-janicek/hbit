@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 
 from hbit_api.domain import events as domain_events
 from hbit_api.domain.dto import devices as devices_dto
-from hbit_api.domain.dto import vuls as vuls_dto
 
 
 @dataclass
@@ -50,9 +49,9 @@ class CAPEC:
     extended_description: str
     likelihood_of_attack: str
     severity: str
-    execution_flow: list[vuls_dto.AttackStepDto]
+    execution_flow: list[dict[str, typing.Any]]
     prerequisites: list[str]
-    skills_required: list[vuls_dto.SkillDto]
+    skills_required: list[dict[str, typing.Any]]
     resources_required: list[str]
     consequences: list[str]
     id: int | None = None
@@ -90,8 +89,8 @@ class CWE:
     extended_description: str
     likelihood_of_exploit: str
     background_details: list[str]
-    potential_mitigations: list[vuls_dto.MitigationDto]
-    detection_methods: list[vuls_dto.DetectionMethodDto]
+    potential_mitigations: list[dict[str, typing.Any]]
+    detection_methods: list[dict[str, typing.Any]]
     capecs: list[CAPEC]
     id: int | None = None
 
@@ -124,7 +123,7 @@ class CVE:
     description: str
     published: datetime.datetime
     last_modified: datetime.datetime
-    cvss: vuls_dto.CVSSDto
+    cvss: dict[str, typing.Any]
     cwes: list[CWE]
     id: int | None = None
 

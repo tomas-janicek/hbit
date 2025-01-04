@@ -5,11 +5,74 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Test",
+            "consoleTitle": "Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "test",
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Agent Device Evaluator",
+            "consoleTitle": "Agent Device Evaluator",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "get_agent_evaluation",
+                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Chain Device Evaluator",
+            "consoleTitle": "Chain Device Evaluator",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "get_chain_evaluation",
+                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Test Device Extraction",
+            "consoleTitle": "Test Device Extraction",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "test_device_extraction",
+                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
             "name": "Try Langchains",
             "consoleTitle": "Try Langchains",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceRoot}/cli.py",
+            "program": "${workspaceRoot}/hbit/cli.py",
             "env": {
                 "PYTHONPATH": "."
             },

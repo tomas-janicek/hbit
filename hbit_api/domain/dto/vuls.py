@@ -76,8 +76,8 @@ class CWEDto(BaseModel):
             extended_description=cwe.extended_description,
             likelihood_of_exploit=cwe.likelihood_of_exploit,
             background_details=cwe.background_details,
-            potential_mitigations=cwe.potential_mitigations,
-            detection_methods=cwe.detection_methods,
+            potential_mitigations=cwe.potential_mitigations,  # type: ignore
+            detection_methods=cwe.detection_methods,  # type: ignore
         )
 
 
@@ -137,9 +137,9 @@ class CAPECOutDto(BaseModel):
             extended_description=capec.extended_description,
             likelihood_of_attack=capec.likelihood_of_attack,
             severity=capec.severity,
-            execution_flow=capec.execution_flow,
+            execution_flow=capec.execution_flow,  # type: ignore
             prerequisites=capec.prerequisites,
-            skills_required=capec.skills_required,
+            skills_required=capec.skills_required,  # type: ignore
             resources_required=capec.resources_required,
             consequences=capec.consequences,
         )

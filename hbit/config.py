@@ -13,11 +13,10 @@ class Settings(BaseSettings):
     HBIT_API_URL: str
     DEFAULT_TIMEOUT: int = 10
     LOGGING_LEVEL: str = "INFO"
-    ADMIN_EMAIL: str
-    ADMIN_PASSWORD: str
 
 
 settings = Settings()  # type: ignore
+
 
 LOGGING = {
     "version": 1,

@@ -84,8 +84,8 @@ def add_cwes(
                 extended_description=cwe_in.extended_description,
                 likelihood_of_exploit=cwe_in.likelihood_of_exploit,
                 background_details=cwe_in.background_details,
-                potential_mitigations=cwe_in.potential_mitigations,
-                detection_methods=cwe_in.detection_methods,
+                potential_mitigations=cwe_in.potential_mitigations,  # type: ignore
+                detection_methods=cwe_in.detection_methods,  # type: ignore
                 capecs=[],
             )
 
@@ -109,9 +109,9 @@ def add_capecs(
                 extended_description=capec_in.extended_description,
                 likelihood_of_attack=capec_in.likelihood_of_attack,
                 severity=capec_in.severity,
-                execution_flow=capec_in.execution_flow,
+                execution_flow=capec_in.execution_flow,  # type: ignore
                 prerequisites=capec_in.prerequisites,
-                skills_required=capec_in.skills_required,
+                skills_required=capec_in.skills_required,  # type: ignore
                 resources_required=capec_in.resources_required,
                 consequences=capec_in.consequences,
             )
@@ -159,6 +159,20 @@ def add_patch(
             patch = uow.patches.add_or_update(patch)
             if not patch:
                 _log.error("Patch with build %s could not be created.", patch_in.build)
+                continue
+
+            for affected_device in patch_in.affected_devices:
+                device = uow.devices.get(affected_device)
+                if not device:
+                    _log.warning(
+                        "Error mapping device with name %s to patch with name %s. "
+                        "Device with this name does not exists.",
+                        affected_device,
+                        patch.name,
+                    )
+                    continue
+
+                patch.devices.append(device)
 
         uow.commit()
 
@@ -213,7 +227,7 @@ def add_cves(
                 description=cve_in.description,
                 published=cve_in.published,
                 last_modified=cve_in.last_modified,
-                cvss=cve_in.cvss,
+                cvss=cve_in.cvss,  # type: ignore
                 cwes=[],
             )
             cve = uow.cves.add_or_update(cve)

@@ -202,6 +202,7 @@ class SqlDeviceRepository(DeviceRepository):
         stmt = stmt.on_conflict_do_update(
             index_elements=[models.Device.identifier],
             set_={
+                "manufacturer_id": device.manufacturer.id,
                 "name": stmt.excluded.name,
                 "identifier": stmt.excluded.identifier,
                 "models": stmt.excluded.models,
