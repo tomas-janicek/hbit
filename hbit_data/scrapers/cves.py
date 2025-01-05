@@ -1,7 +1,8 @@
 import logging
 import typing
 
-from hbit_data import dto, normalizer, requests
+from common import requests
+from hbit_data import dto, normalizer
 
 from . import base
 

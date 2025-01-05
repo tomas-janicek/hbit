@@ -1,7 +1,8 @@
 import typing
 from collections.abc import Iterator
 
-from hbit_data import dto, requests
+from common import requests
+from hbit_data import dto, settings
 
 from . import base
 
@@ -17,6 +18,7 @@ class iPhoneScraper(base.Scraper[dto.Device]):
             base=self.apple_db,
             path=self.devices_path,
             response_type=list[dict[str, typing.Any]],
+            timeout=settings.DEFAULT_TIMEOUT,
         )
         if not data:
             raise Exception(f"Error loading iPhones from {self.apple_db}.")

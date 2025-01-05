@@ -1,5 +1,8 @@
+from common import requests
+from hbit import settings
+
+# TODO: Move this to common or copy it here
 from hbit_api.domain.dto.evaluation import EvaluationDto
-from hbit_data import requests
 
 
 class HBITClient:
@@ -14,5 +17,6 @@ class HBITClient:
             base=self.hbit_api_url,
             path=f"device-evaluation?device_identifier={device_identifier}&patch_build={patch_build}",
             response_type=EvaluationDto,
+            timeout=settings.DEFAULT_TIMEOUT,
         )
         return evaluation

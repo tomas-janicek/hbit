@@ -1,6 +1,7 @@
 import typing
 
-from hbit_data import dto, requests
+from common import requests
+from hbit_data import dto
 
 from . import base, cves, patches
 

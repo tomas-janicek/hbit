@@ -4,9 +4,8 @@ import typing
 import httpx
 import pydantic
 import stamina
-from authlib.integrations.httpx_client import OAuth2Client  # type: ignore
 
-from hbit_data import settings, utils
+from common import utils
 
 _log = logging.getLogger(__name__)
 
@@ -21,8 +20,8 @@ class Requests:
         base: str,
         path: str,
         response_type: type[ResponseT],
+        timeout: int,
         params: dict[str, typing.Any] | None = None,
-        timeout: int = settings.DEFAULT_TIMEOUT,
     ) -> ResponseT | None: ...
 
     def post(
@@ -31,7 +30,7 @@ class Requests:
         base: str,
         path: str,
         content: bytes,
-        timeout: int = settings.DEFAULT_TIMEOUT,
+        timeout: int,
     ) -> None: ...
 
 
@@ -48,8 +47,8 @@ class HTTPXRequests(Requests):
         base: str,
         path: str,
         response_type: type[ResponseT],
+        timeout: int,
         params: dict[str, typing.Any] | None = None,
-        timeout: int = settings.DEFAULT_TIMEOUT,
     ) -> ResponseT | None:
         url = utils.create_url(base, path)
         try:
@@ -77,7 +76,7 @@ class HTTPXRequests(Requests):
         base: str,
         path: str,
         content: bytes,
-        timeout: int = settings.DEFAULT_TIMEOUT,
+        timeout: int,
     ) -> None:
         url = utils.create_url(base, path)
         try:
@@ -92,17 +91,3 @@ class HTTPXRequests(Requests):
                 exc.request.url,
             )
             raise exc
-
-
-def create_hbit_api_client() -> httpx.Client:
-    client = OAuth2Client()
-
-    token_endpoint = utils.create_url(
-        base=settings.HBIT_API_URL, path="/login/access-token"
-    )
-    client.fetch_token(
-        token_endpoint,
-        username=settings.ADMIN_EMAIL,
-        password=settings.ADMIN_PASSWORD,
-    )
-    return client

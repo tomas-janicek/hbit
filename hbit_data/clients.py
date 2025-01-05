@@ -2,7 +2,8 @@ import logging
 
 import pydantic
 
-from hbit_data import dto, requests
+from common import requests
+from hbit_data import dto, settings
 
 _log = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class HBITClient:
             base=self.hbit_api_url,
             path="/patches/batch",
             content=patches_adapter.dump_json(patches),
+            timeout=settings.DEFAULT_TIMEOUT,
         )
 
     def send_cves(self, patch_build: str, cves: list[dto.CVE]) -> None:
@@ -33,6 +35,7 @@ class HBITClient:
             base=self.hbit_api_url,
             path=f"/patches/{patch_build}/cves/batch",
             content=cve_adapter.dump_json(cves),
+            timeout=settings.DEFAULT_TIMEOUT,
         )
 
     def send_devices(self, devices: list[dto.Device]) -> None:
@@ -41,6 +44,7 @@ class HBITClient:
             base=self.hbit_api_url,
             path="/devices/batch",
             content=devices_adapter.dump_json(devices),
+            timeout=settings.DEFAULT_TIMEOUT,
         )
 
     def send_cwes(self, cwes: list[dto.CWE]) -> None:
@@ -49,6 +53,7 @@ class HBITClient:
             base=self.hbit_api_url,
             path="/cwes/batch",
             content=cwes_adapter.dump_json(cwes),
+            timeout=settings.DEFAULT_TIMEOUT,
         )
 
     def send_capecs(self, capecs: list[dto.CAPEC]) -> None:
@@ -57,4 +62,5 @@ class HBITClient:
             base=self.hbit_api_url,
             path="/capecs/batch",
             content=capecs_adapter.dump_json(capecs),
+            timeout=settings.DEFAULT_TIMEOUT,
         )

@@ -44,6 +44,7 @@ device_examples = [
 ]
 
 
+# TODO: Create class that wraps this two return and behavior they provide
 def create_device_extractor() -> (
     tuple[Runnable[PromptValue, Device], ChatPromptTemplate]
 ):

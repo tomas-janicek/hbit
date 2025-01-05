@@ -3,10 +3,9 @@ from langchain_core.globals import set_debug, set_llm_cache, set_verbose
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 
-from hbit import clients, device_security, extractors, settings
-
 # TODO: Create common module for hbit_data.requests
-from hbit_data import requests
+from common import requests
+from hbit import clients, device_security, extractors, settings, utils
 
 cli = typer.Typer()
 
@@ -67,7 +66,7 @@ def translate_text_to(language: str, text: str, debug: bool = False) -> None:
 
 @cli.command(name="test")
 def test() -> None:
-    hbit_request = requests.HTTPXRequests(requests.create_hbit_api_client())
+    hbit_request = requests.HTTPXRequests(utils.create_hbit_api_client())
     hbit = clients.HBITClient(request=hbit_request, hbit_api_url=settings.HBIT_API_URL)
     device_evalation = hbit.get_device_evaluation("iphone14,2", "22a3354")
     if device_evalation:

@@ -1,6 +1,7 @@
 import typing
 
-from hbit_data import dto, enums, normalizer, requests
+from common import requests
+from hbit_data import dto, enums, normalizer, settings
 
 from . import base
 
@@ -17,6 +18,7 @@ class PatchScraper(base.Scraper[dto.Patch]):
             base=self.apple_db,
             path=self.ios_patches_path,
             response_type=list[dict[str, typing.Any]],
+            timeout=settings.DEFAULT_TIMEOUT,
         )
         if not data:
             raise Exception(f"Error loading iOS data from {self.apple_db}.")

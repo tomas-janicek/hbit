@@ -1,14 +1,8 @@
 import httpx
 import typer
 
-from hbit_data import (
-    clients,
-    dto,
-    pipelines,
-    processors,
-    requests,
-    settings,
-)
+from common import requests
+from hbit_data import clients, dto, pipelines, processors, settings, utils
 from hbit_data.scrapers import capecs, cwes, iphones, patches, security_updates
 
 cli = typer.Typer()
@@ -16,7 +10,7 @@ cli = typer.Typer()
 
 @cli.command(name="scrape_security_updates")
 def scrape_security_updates() -> None:
-    hbit_request = requests.HTTPXRequests(requests.create_hbit_api_client())
+    hbit_request = requests.HTTPXRequests(utils.create_hbit_api_client())
     hbit = clients.HBITClient(request=hbit_request, hbit_api_url=settings.HBIT_API_URL)
     processor = processors.ItemProcessor[dto.SecurityUpdate](
         batch_size=2,
@@ -33,7 +27,7 @@ def scrape_security_updates() -> None:
 
 @cli.command(name="scrape_iphones")
 def scrape_iphones() -> None:
-    hbit_request = requests.HTTPXRequests(requests.create_hbit_api_client())
+    hbit_request = requests.HTTPXRequests(utils.create_hbit_api_client())
     hbit = clients.HBITClient(request=hbit_request, hbit_api_url=settings.HBIT_API_URL)
     processor = processors.ItemProcessor[dto.Device](
         batch_size=32,
@@ -50,7 +44,7 @@ def scrape_iphones() -> None:
 
 @cli.command(name="scrape_cwes")
 def scrape_cwes() -> None:
-    hbit_request = requests.HTTPXRequests(requests.create_hbit_api_client())
+    hbit_request = requests.HTTPXRequests(utils.create_hbit_api_client())
     hbit = clients.HBITClient(request=hbit_request, hbit_api_url=settings.HBIT_API_URL)
     processor = processors.ItemProcessor[dto.CWE](
         batch_size=32,
@@ -66,7 +60,7 @@ def scrape_cwes() -> None:
 
 @cli.command(name="scrape_capecs")
 def scrape_capecs() -> None:
-    hbit_request = requests.HTTPXRequests(requests.create_hbit_api_client())
+    hbit_request = requests.HTTPXRequests(utils.create_hbit_api_client())
     hbit = clients.HBITClient(request=hbit_request, hbit_api_url=settings.HBIT_API_URL)
     processor = processors.ItemProcessor[dto.CAPEC](
         batch_size=32,
@@ -82,7 +76,7 @@ def scrape_capecs() -> None:
 
 @cli.command(name="scrape_patches")
 def scrape_patches() -> None:
-    hbit_request = requests.HTTPXRequests(requests.create_hbit_api_client())
+    hbit_request = requests.HTTPXRequests(utils.create_hbit_api_client())
     hbit = clients.HBITClient(request=hbit_request, hbit_api_url=settings.HBIT_API_URL)
     processor = processors.ItemProcessor[dto.Patch](
         batch_size=32,
