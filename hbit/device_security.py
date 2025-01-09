@@ -3,7 +3,7 @@ from typing import Annotated
 
 from groq import BaseModel
 from langchain import hub
-from langchain.schema import BaseMessage
+from langchain.schema import AIMessage, BaseMessage
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
 from langchain_community.utilities import SQLDatabase
@@ -13,7 +13,10 @@ from langgraph.graph import StateGraph  # type: ignore
 from langgraph.prebuilt import create_react_agent  # type: ignore
 from typing_extensions import TypedDict
 
-db = SQLDatabase.from_uri("sqlite:///app.db")
+from common import dto as common_dto
+from hbit import evaluations, extractors, settings
+
+db = SQLDatabase.from_uri(settings.READ_SQLALCHEMY_DATABASE_URI)
 
 
 class QueryOutput(BaseModel):
@@ -66,6 +69,8 @@ class ChainDeviceEvaluator:
 
     def write_query(self, state: State) -> dict[str, typing.Any]:
         """Generate SQL query to fetch information."""
+        # TODO: How can I help LLM realize that it should also map CWEs, CAPECs, etc.?
+        # TODO: And how to describe how its should do it? Do I even have to?
         prompt = self.query_prompt_template.invoke(
             {
                 "dialect": db.dialect,
@@ -101,3 +106,46 @@ class ChainDeviceEvaluator:
             print(step)
 
         return step["generate_answer"]["answer"]
+
+
+class SummarizationEvaluator:
+    def __init__(
+        self,
+        model: BaseChatModel,
+        device_extractor: extractors.DeviceExtractor,
+        patch_extractor: extractors.PatchExtractor,
+        evaluation_service: evaluations.EvaluationService,
+    ) -> None:
+        self.model = model
+        self.device_extractor = device_extractor
+        self.patch_extractor = patch_extractor
+        self.evaluation_service = evaluation_service
+
+    def get_device_security_answer(self, question: str) -> str:
+        device_identifier = self.device_extractor.extract_device_identifier(question)
+        if not device_identifier:
+            raise ValueError(
+                "Could not figure out what device the user is asking about."
+            )
+        patch_build = self.patch_extractor.extract_patch_build(question)
+        if not patch_build:
+            raise ValueError(
+                "Could not figure out what patch the user is asking about."
+            )
+        evaluation = self.evaluation_service.get_trimmed_evaluation(
+            device_identifier, patch_build
+        )
+
+        return self.generate_summary(question, evaluation)
+
+    def generate_summary(
+        self, question: str, evaluation: common_dto.EvaluationDto
+    ) -> str:
+        prompt = (
+            "Given the following user question, and devices evaluation,"
+            "answer the user question.\n\n"
+            f"Question: {question}\n"
+            f"Evaluation: {evaluation.to_readable_str()}"
+        )
+        response: AIMessage = self.model.invoke(prompt)  # type: ignore
+        return str(response.content)

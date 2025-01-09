@@ -22,7 +22,7 @@ class Requests:
         response_type: type[ResponseT],
         timeout: int,
         params: dict[str, typing.Any] | None = None,
-    ) -> ResponseT | None: ...
+    ) -> ResponseT: ...
 
     def post(
         self,
@@ -39,7 +39,11 @@ class HTTPXRequests(Requests):
         self.client = client
 
     @stamina.retry(
-        on=httpx.HTTPError, attempts=3, wait_initial=5, wait_max=60, wait_exp_base=2
+        on=httpx.HTTPStatusError,
+        attempts=3,
+        wait_initial=5,
+        wait_max=60,
+        wait_exp_base=2,
     )
     def get(
         self,
@@ -49,7 +53,7 @@ class HTTPXRequests(Requests):
         response_type: type[ResponseT],
         timeout: int,
         params: dict[str, typing.Any] | None = None,
-    ) -> ResponseT | None:
+    ) -> ResponseT:
         url = utils.create_url(base, path)
         try:
             response = self.client.get(url, params=params, timeout=timeout)
@@ -59,6 +63,7 @@ class HTTPXRequests(Requests):
             return response_data
         except httpx.RequestError as exc:
             _log.error("An error occurred while requesting %s.", exc.request.url)
+            raise exc
         except httpx.HTTPStatusError as exc:
             _log.error(
                 "Error response %s while requesting %s.",
@@ -68,7 +73,11 @@ class HTTPXRequests(Requests):
             raise exc
 
     @stamina.retry(
-        on=httpx.HTTPError, attempts=3, wait_initial=5, wait_max=60, wait_exp_base=2
+        on=httpx.HTTPStatusError,
+        attempts=3,
+        wait_initial=5,
+        wait_max=60,
+        wait_exp_base=2,
     )
     def post(
         self,
@@ -84,6 +93,7 @@ class HTTPXRequests(Requests):
             response.raise_for_status()
         except httpx.RequestError as exc:
             _log.error("An error occurred while requesting %s.", exc.request.url)
+            raise exc
         except httpx.HTTPStatusError as exc:
             _log.error(
                 "Error response %s while requesting %s.",

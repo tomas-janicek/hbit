@@ -38,7 +38,7 @@ LOGGING = {
             "level": settings.LOGGING_LEVEL,
             "class": "logging.handlers.TimedRotatingFileHandler",
             "formatter": "default",
-            "backupCount": "4",
+            "backupCount": 4,
             "filename": "scrapers.log",
         },
     },

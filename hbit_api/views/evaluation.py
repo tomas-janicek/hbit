@@ -1,18 +1,18 @@
 from sqlalchemy.orm import Session
 from sqlmodel import select
 
+from common import dto as common_dto
 from hbit_api import errors
 from hbit_api.domain import models
-from hbit_api.domain.dto import evaluation as dto
 
 
 def read_evaluation(
     session: Session,
     device_identifier: str,
     patch_build: str,
-) -> dto.EvaluationDto:
+) -> common_dto.EvaluationDto:
     statement = select(models.Device).where(
-        models.Device.identifier == device_identifier
+        models.Device.identifier.like(device_identifier)  # type: ignore
     )
     device = session.scalar(statement)
 
@@ -21,7 +21,7 @@ def read_evaluation(
 
     statement = (
         select(models.Patch)
-        .where(models.Patch.build == patch_build)
+        .where(models.Patch.build.like(patch_build))  # type: ignore
         .join(models.Patch.devices)  # type: ignore
         .where(models.Device.id == device.id)
     )
@@ -30,5 +30,5 @@ def read_evaluation(
     if not patch:
         raise errors.DoesNotExist()
 
-    device_evaluation = dto.EvaluationDto.from_device_and_patch(device, patch)
+    device_evaluation = common_dto.EvaluationDto.from_device_and_patch(device, patch)
     return device_evaluation

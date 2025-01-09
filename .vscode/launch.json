@@ -5,21 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Test",
-            "consoleTitle": "Test",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceRoot}/hbit/cli.py",
-            "env": {
-                "PYTHONPATH": "."
-            },
-            "args": [
-                "test",
-            ],
-            "justMyCode": false,
-            "envFile": "${workspaceFolder}/.env",
-        },
-        {
             "name": "Agent Device Evaluator",
             "consoleTitle": "Agent Device Evaluator",
             "type": "debugpy",
@@ -52,8 +37,40 @@
             "envFile": "${workspaceFolder}/.env",
         },
         {
-            "name": "Test Device Extraction",
-            "consoleTitle": "Test Device Extraction",
+            "name": "Structured Summarization Evaluator",
+            "consoleTitle": "Structured Summarization Evaluator",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "get_structured_evaluation",
+                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "SQL Summarization Evaluator",
+            "consoleTitle": "SQL Summarization Evaluator",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "get_sql_evaluation",
+                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Structured Device Extractor",
+            "consoleTitle": "Structured Device Extractor",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceRoot}/hbit/cli.py",
@@ -62,6 +79,59 @@
             },
             "args": [
                 "test_device_extraction",
+                // "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+                // "How security is my iPhone 11 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+                "Do you like my iphone15,2?"
+                // "How secure is my device with model A2483."
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "SQL Device Extractor",
+            "consoleTitle": "SQL Device Extractor",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "test_sql_device_extractor",
+                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+                // "Do you like my iphone15,2?"
+                // "How secure is my device with model A2483."
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Structured Patch Extractor",
+            "consoleTitle": "Structured Patch Extractor",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "test_patch_extraction",
+                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "SQL Patch Extractor",
+            "consoleTitle": "SQL Patch Extractor",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "test_sql_patch_extractor",
                 "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
             ],
             "justMyCode": false,
@@ -80,6 +150,21 @@
                 "translate_text_to",
                 "slovak", // language
                 "LangChain is a framework for developing applications powered by large language models (LLMs)." // text
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Get Device Vulnerabilities",
+            "consoleTitle": "Get Device Vulnerabilities",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "get_device_vulnerabilities",
             ],
             "justMyCode": false,
             "envFile": "${workspaceFolder}/.env",
