@@ -1,7 +1,13 @@
 [project]
 name = "hbit"
 version = "0.1.0"
-description = "Add your description here"
+description = """
+HBIT is project trying to analyze and aggregate security information about mobile devices.
+It consist of scrapers that gather data from various sources and a web API that provides
+access to the data. The last part is simple CLI app that serve as a prototype for langchain
+based application using data from API to provide security information to user based on his
+user's question.
+"""
 readme = "README.md"
 requires-python = ">=3.12"
 
