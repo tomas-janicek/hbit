@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     DB_PASSWORD: str | None = None
     DB_NAME: str | None = None
 
+    LANGCHAIN_TRACING_V2: str
+    LANGCHAIN_API_KEY: str
+    GROQ_API_KEY: str
+    MODEL_SEED: int = 0
+
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
@@ -67,8 +72,8 @@ LOGGING = {
             "level": settings.LOGGING_LEVEL,
             "class": "logging.handlers.TimedRotatingFileHandler",
             "formatter": "default",
-            "backupCount": 4,
-            "filename": "ml.log",
+            "backupCount": 1,
+            "filename": "logs/ml.log",
         },
     },
     "loggers": {

@@ -47,7 +47,8 @@
             },
             "args": [
                 "get_structured_evaluation",
-                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+                // "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+                "How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?"
             ],
             "justMyCode": false,
             "envFile": "${workspaceFolder}/.env",
@@ -63,7 +64,8 @@
             },
             "args": [
                 "get_sql_evaluation",
-                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+                // "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+                "How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?"
             ],
             "justMyCode": false,
             "envFile": "${workspaceFolder}/.env",
@@ -80,9 +82,8 @@
             "args": [
                 "test_device_extraction",
                 // "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
-                // "How security is my iPhone 11 Pro device if I have patch 18.1.0 installed identified by build 22B83."
-                "Do you like my iphone15,2?"
-                // "How secure is my device with model A2483."
+                // "Do you like my iphone15,2?"
+                "How secure is my device with model A2483."
             ],
             "justMyCode": false,
             "envFile": "${workspaceFolder}/.env",
@@ -98,9 +99,9 @@
             },
             "args": [
                 "test_sql_device_extractor",
-                "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
+                // "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
                 // "Do you like my iphone15,2?"
-                // "How secure is my device with model A2483."
+                "How secure is my device with model A2483."
             ],
             "justMyCode": false,
             "envFile": "${workspaceFolder}/.env",

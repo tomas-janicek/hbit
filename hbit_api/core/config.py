@@ -142,8 +142,8 @@ LOGGING = {
             "level": settings.LOGGING_LEVEL,
             "class": "logging.handlers.TimedRotatingFileHandler",
             "formatter": "default",
-            "backupCount": 4,
-            "filename": "api.log",
+            "backupCount": 1,
+            "filename": "logs/api.log",
         },
     },
     "loggers": {

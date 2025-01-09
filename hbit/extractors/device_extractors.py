@@ -132,30 +132,14 @@ class SqlDeviceExtractor(base.DeviceExtractor):
         [
             (
                 "system",
-                "You are tasked with generating a syntactically correct {dialect} query based on an input question. "
-                "The goal is to extract the `identifier` column from the `devices` table. Ensure the query only filters "
-                "by values explicitly mentioned in the input question that are relevant to the device. "
-                "Avoid querying columns that do not exist in the schema or using incorrect values as examples. "
-                "Focus solely on the `identifier` column in your output. "
-                "Do not apply any filtering in fields that contain JSON data.\n\n"
-                "The schema of the `devices` table is as follows:\n"
-                "{table_info}\n",
-            ),
-            ("user", "Question: {input}"),
-        ]
-    )
-    query_prompt_template = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
                 "Your task is to generate a syntactically correct {dialect} query based on the given input question. "
                 "The purpose of the query is to extract the `identifier` column from the `devices` table. "
                 "Follow these guidelines:\n"
                 "1. Only filter by values explicitly mentioned in the input question that are relevant to the device.\n"
-                "2. Avoid querying columns that are not part of the schema or using incorrect example values.\n"
-                "3. Prioritize using unique columns that can independently identify a device.\n"
+                "2. Avoid querying columns that are not part of the schema or values do not resamble values in rows.\n"
+                "3. Prioritize using unique columns that can independently identify a device by themselves.\n"
                 "4. Use `LIKE` for string matching to ensure case-insensitive filtering.\n"
-                "5. Do not apply any filtering on fields containing JSON data.\n"
+                "5. Do not apply any filtering on any JSON fields.\n"
                 "6. Make sure values you are filtering by resemble the values in the schema."
                 "\n\n"
                 "The schema of the `devices` table is as follows:\n"

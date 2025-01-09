@@ -141,6 +141,7 @@ class SummarizationEvaluator:
     def generate_summary(
         self, question: str, evaluation: common_dto.EvaluationDto
     ) -> str:
+        # TODO: Give more structure to summary and create separate SummaryService
         prompt = (
             "Given the following user question, and devices evaluation,"
             "answer the user question.\n\n"

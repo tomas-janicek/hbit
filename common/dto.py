@@ -16,7 +16,7 @@ class AttackStepDto(BaseModel):
     step: int
     phase: str
     description: str
-    techniques: list[str]
+    techniques: list[str] = []
 
     def to_readable_str(self) -> str:
         return f"{self.step}. {self.phase}: {self.description} ({', '.join(self.techniques)})\n"
@@ -36,11 +36,11 @@ class CAPECDto(BaseModel):
     extended_description: str
     likelihood_of_attack: str
     severity: str
-    execution_flow: list[AttackStepDto]
-    prerequisites: list[str]
-    skills_required: list[SkillDto]
-    resources_required: list[str]
-    consequences: list[str]
+    execution_flow: list[AttackStepDto] = []
+    prerequisites: list[str] = []
+    skills_required: list[SkillDto] = []
+    resources_required: list[str] = []
+    consequences: list[str] = []
 
     @classmethod
     def from_capec(cls, capec: "models.CAPEC") -> typing.Self:
@@ -111,10 +111,10 @@ class CweDto(BaseModel):
     description: str
     extended_description: str
     likelihood_of_exploit: str
-    background_details: list[str]
-    potential_mitigations: list[MitigationDto]
-    detection_methods: list[DetectionMethodDto]
-    capecs: list[CAPECDto]
+    background_details: list[str] = []
+    potential_mitigations: list[MitigationDto] = []
+    detection_methods: list[DetectionMethodDto] = []
+    capecs: list[CAPECDto] = []
 
     @classmethod
     def from_cwe(cls, cwe: "models.CWE") -> typing.Self:
@@ -161,7 +161,7 @@ class VulnerabilityDto(BaseModel):
     cve_id: str
     description: str
     score: float
-    cwes: list[CweDto]
+    cwes: list[CweDto] = []
 
     @classmethod
     def from_cve(cls, cve: "models.CVE") -> typing.Self:
@@ -204,7 +204,7 @@ class DeviceDto(BaseModel):
     manufacturer: str
     name: str
     identifier: str
-    models: list[str]
+    models: list[str] = []
     released: datetime.date | None
     discontinued: datetime.date | None
 
@@ -232,7 +232,7 @@ class DeviceDto(BaseModel):
 class EvaluationDto(BaseModel):
     device: DeviceDto
     patch: PatchEvaluationDto
-    vulnerabilities: list[VulnerabilityDto]
+    vulnerabilities: list[VulnerabilityDto] = []
 
     @classmethod
     def from_device_and_patch(
