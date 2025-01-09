@@ -2,18 +2,20 @@ import datetime
 import typing
 from dataclasses import dataclass, field
 
+from sqlalchemy.orm import Mapped
+
 from hbit_api.domain import events as domain_events
 from hbit_api.domain.dto import devices as devices_dto
 
 
 @dataclass
 class User:
-    email: str
-    name: str | None
-    hashed_password: str
-    is_active: bool = True
-    is_superuser: bool = False
-    id: int | None = None
+    email: Mapped[str]
+    name: Mapped[str | None]
+    hashed_password: Mapped[str]
+    is_active: Mapped[bool] = True  # type: ignore
+    is_superuser: Mapped[bool] = False  # type: ignore
+    id: Mapped[int | None] = None  # type: ignore
 
     events: list[domain_events.Event] = field(default_factory=list)
 
@@ -44,17 +46,17 @@ class User:
 
 @dataclass
 class CAPEC:
-    capec_id: int
-    description: str
-    extended_description: str
-    likelihood_of_attack: str
-    severity: str
-    execution_flow: list[dict[str, typing.Any]]
-    prerequisites: list[str]
-    skills_required: list[dict[str, typing.Any]]
-    resources_required: list[str]
-    consequences: list[str]
-    id: int | None = None
+    capec_id: Mapped[int]
+    description: Mapped[str]
+    extended_description: Mapped[str]
+    likelihood_of_attack: Mapped[str]
+    severity: Mapped[str]
+    execution_flow: Mapped[list[dict[str, typing.Any]]]
+    prerequisites: Mapped[list[str]]
+    skills_required: Mapped[list[dict[str, typing.Any]]]
+    resources_required: Mapped[list[str]]
+    consequences: Mapped[list[str]]
+    id: Mapped[int | None] = None  # type: ignore
 
     events: list[domain_events.Event] = field(default_factory=list)
 
@@ -83,16 +85,16 @@ class CAPEC:
 
 @dataclass
 class CWE:
-    cwe_id: int
-    name: str
-    description: str
-    extended_description: str
-    likelihood_of_exploit: str
-    background_details: list[str]
-    potential_mitigations: list[dict[str, typing.Any]]
-    detection_methods: list[dict[str, typing.Any]]
-    capecs: list[CAPEC]
-    id: int | None = None
+    cwe_id: Mapped[int]
+    name: Mapped[str]
+    description: Mapped[str]
+    extended_description: Mapped[str]
+    likelihood_of_exploit: Mapped[str]
+    background_details: Mapped[list[str]]
+    potential_mitigations: Mapped[list[dict[str, typing.Any]]]
+    detection_methods: Mapped[list[dict[str, typing.Any]]]
+    capecs: Mapped[list[CAPEC]]
+    id: Mapped[int | None] = None  # type: ignore
 
     events: list[domain_events.Event] = field(default_factory=list)
 
@@ -119,13 +121,13 @@ class CWE:
 
 @dataclass
 class CVE:
-    cve_id: str
-    description: str
-    published: datetime.datetime
-    last_modified: datetime.datetime
-    cvss: dict[str, typing.Any]
-    cwes: list[CWE]
-    id: int | None = None
+    cve_id: Mapped[str]
+    description: Mapped[str]
+    published: Mapped[datetime.datetime]
+    last_modified: Mapped[datetime.datetime]
+    cvss: Mapped[dict[str, typing.Any]]
+    cwes: Mapped[list[CWE]]
+    id: Mapped[int | None] = None  # type: ignore
 
     events: list[domain_events.Event] = field(default_factory=list)
 
@@ -149,8 +151,8 @@ class CVE:
 
 @dataclass
 class Manufacturer:
-    name: str
-    id: int | None = None
+    name: Mapped[str]
+    id: Mapped[int | None] = None  # type: ignore
 
     events: list[domain_events.Event] = field(default_factory=list)
 
@@ -168,14 +170,14 @@ class Manufacturer:
 
 @dataclass
 class Device:
-    manufacturer: Manufacturer
-    name: str
-    identifier: str
-    models: list[str]
-    released: datetime.date | None
-    discontinued: datetime.date | None
-    hardware_info: devices_dto.HardwareInfo
-    id: int | None = None
+    manufacturer: Mapped[Manufacturer]
+    name: Mapped[str]
+    identifier: Mapped[str]
+    models: Mapped[list[str]]
+    released: Mapped[datetime.date | None]
+    discontinued: Mapped[datetime.date | None]
+    hardware_info: Mapped[devices_dto.HardwareInfo]
+    id: Mapped[int | None] = None  # type: ignore
 
     events: list[domain_events.Event] = field(default_factory=list)
 
@@ -200,17 +202,17 @@ class Device:
 
 @dataclass
 class Patch:
-    build: str
-    os: str
-    name: str
-    version: str
-    major: int
-    minor: int
-    patch: int
-    released: datetime.date | None
-    cves: list[CVE]
-    devices: list[Device]
-    id: int | None = None
+    build: Mapped[str]
+    os: Mapped[str]
+    name: Mapped[str]
+    version: Mapped[str]
+    major: Mapped[int]
+    minor: Mapped[int]
+    patch: Mapped[int]
+    released: Mapped[datetime.date | None]
+    cves: Mapped[list[CVE]]
+    devices: Mapped[list[Device]]
+    id: Mapped[int | None] = None  # type: ignore
 
     events: list[domain_events.Event] = field(default_factory=list)
 

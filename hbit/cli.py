@@ -3,7 +3,7 @@ from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_groq import ChatGroq
 
 from common import requests
-from hbit import clients, device_security, evaluations, settings, utils
+from hbit import clients, device_security, evaluations, settings, summaries, utils
 from hbit.extractors import device_extractors, patch_extractors
 
 cli = typer.Typer()
@@ -57,8 +57,10 @@ def get_structured_evaluation(question: str) -> None:
     device_extractor = device_extractors.StructureDeviceExtractor(model)
     patch_extractor = patch_extractors.SqlPatchExtractor(model)
     evaluation_service = evaluations.IterativeEvaluationService(client)
+    summary_service = summaries.AiSummaryService(model)
     agent_evaluator = device_security.SummarizationEvaluator(
         model=model,
+        summary_service=summary_service,
         device_extractor=device_extractor,
         evaluation_service=evaluation_service,
         patch_extractor=patch_extractor,
@@ -80,11 +82,11 @@ def get_sql_evaluation(question: str) -> None:
     client = clients.ApiHBITClient(request, settings.HBIT_API_URL)
     device_extractor = device_extractors.SqlDeviceExtractor(model)
     patch_extractor = patch_extractors.SqlPatchExtractor(model)
-    evaluation_service = evaluations.AiEvaluationService(
-        model, client, n_vulnerabilities=10
-    )
+    evaluation_service = evaluations.IterativeEvaluationService(client)
+    summary_service = summaries.AiSummaryService(model)
     agent_evaluator = device_security.SummarizationEvaluator(
         model=model,
+        summary_service=summary_service,
         device_extractor=device_extractor,
         patch_extractor=patch_extractor,
         evaluation_service=evaluation_service,

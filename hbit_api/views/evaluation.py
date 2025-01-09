@@ -12,7 +12,7 @@ def read_evaluation(
     patch_build: str,
 ) -> common_dto.EvaluationDto:
     statement = select(models.Device).where(
-        models.Device.identifier.like(device_identifier)  # type: ignore
+        models.Device.identifier.like(device_identifier)
     )
     device = session.scalar(statement)
 
@@ -21,8 +21,8 @@ def read_evaluation(
 
     statement = (
         select(models.Patch)
-        .where(models.Patch.build.like(patch_build))  # type: ignore
-        .join(models.Patch.devices)  # type: ignore
+        .where(models.Patch.build.like(patch_build))
+        .join(models.Patch.devices)
         .where(models.Device.id == device.id)
     )
     patch = session.scalar(statement)

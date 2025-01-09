@@ -1,8 +1,8 @@
 import typing
 
+from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
-from sqlmodel import select
 
 from hbit_api.domain import models
 
@@ -306,7 +306,7 @@ class SqlCWERepository(CWERepository):
     def add_or_update(self, cwe: models.CWE) -> models.CWE | None:
         stmt = insert(models.CWE).values(cwe.dict())
         stmt = stmt.on_conflict_do_update(
-            index_elements=[models.CWE.cwe_id],  # type: ignore
+            index_elements=[models.CWE.cwe_id],
             set_={
                 "cwe_id": stmt.excluded.cwe_id,
                 "name": stmt.excluded.name,
@@ -352,7 +352,7 @@ class SqlCAPECRepository(CAPECRepository):
     def add_or_update(self, capec: models.CAPEC) -> models.CAPEC | None:
         stmt = insert(models.CAPEC).values(capec.dict())
         stmt = stmt.on_conflict_do_update(
-            index_elements=[models.CAPEC.capec_id],  # type: ignore
+            index_elements=[models.CAPEC.capec_id],
             set_={
                 "description": stmt.excluded.description,
                 "extended_description": stmt.excluded.extended_description,
