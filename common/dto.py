@@ -20,11 +20,12 @@ class AttackStepDto(BaseModel):
 
     def to_readable_str(self) -> str:
         techniques = ", ".join(self.techniques)
-        return (
-            f"###### {self.step}. ({self.phase})\n"
-            f"Techniques: {techniques if techniques else "[]"}\n"
-            f"Description: {self.description}"
-        )
+        parts = [
+            f"######### Step {self.step}. ({self.phase})",
+            f"Techniques: {techniques}" if techniques else "",
+            f"Description: {self.description}" if self.description else "",
+        ]
+        return "\n".join(part for part in parts if part)
 
 
 class SkillDto(BaseModel):
@@ -32,7 +33,7 @@ class SkillDto(BaseModel):
     description: str
 
     def to_readable_str(self) -> str:
-        return f"{self.level}: {self.description}"
+        return f"{self.level.capitalize()} Skill: {self.description}"
 
 
 class CAPECDto(BaseModel):
@@ -73,19 +74,30 @@ class CAPECDto(BaseModel):
         resources_required_str = "\n".join(self.resources_required)
         consequences_str = "\n".join(self.consequences)
 
-        return (
-            "##### CAPEC\n"
-            f"CAPEC ID: {self.capec_id}\n"
-            f"Description: {self.description}\n"
-            f"Extended Description: {self.extended_description}\n"
-            f"Likelihood of Attack: {self.likelihood_of_attack}\n"
-            f"Severity: {self.severity}\n"
-            f"Execution Flow:\n{execution_flow_str if execution_flow_str else "[]"}\n"
-            f"Prerequisites:\n{prerequisites_str if prerequisites_str else "[]"}\n"
-            f"Skills Required:\n{skills_required_str if skills_required_str else "[]"}\n"
-            f"Resources Required:\n{resources_required_str if resources_required_str else "[]"}\n"
-            f"Consequences:\n{consequences_str if consequences_str else "[]"}"
-        )
+        parts = [
+            "####### CAPEC",
+            f"CAPEC ID: {self.capec_id}",
+            f"Description: {self.description}",
+            f"Extended Description: {self.extended_description}"
+            if self.extended_description
+            else "",
+            f"Likelihood of Attack: {self.likelihood_of_attack}"
+            if self.likelihood_of_attack
+            else "",
+            f"Severity: {self.severity}" if self.severity else "",
+            f"######## Execution Flow\n{execution_flow_str}"
+            if execution_flow_str
+            else "",
+            f"######## Prerequisites\n{prerequisites_str}" if prerequisites_str else "",
+            f"######## Skills Required\n{skills_required_str}"
+            if skills_required_str
+            else "",
+            f"######## Resources Required\n{resources_required_str}"
+            if resources_required_str
+            else "",
+            f"######## Consequences\n{consequences_str}" if consequences_str else "",
+        ]
+        return "\n".join(part for part in parts if part)
 
 
 #######
@@ -99,11 +111,12 @@ class MitigationDto(BaseModel):
     effectiveness_notes: str
 
     def to_readable_str(self) -> str:
-        return (
-            "##### Attack Mitigation Strategies\n"
-            f"Effectiveness: {self.effectiveness}\n"
-            f"Description: {self.description}"
-        )
+        parts = [
+            "####### Attack Mitigation Strategies",
+            f"Effectiveness: {self.effectiveness}" if self.effectiveness else "",
+            f"Description: {self.description}" if self.description else "",
+        ]
+        return "\n".join(part for part in parts if part)
 
 
 class DetectionMethodDto(BaseModel):
@@ -112,12 +125,13 @@ class DetectionMethodDto(BaseModel):
     effectiveness: str
 
     def to_readable_str(self) -> str:
-        return (
-            "##### Vulnerability Detection Method\n"
-            f"Method: {self.method}\n"
-            f"Effectiveness: {self.effectiveness}\n"
-            f"Description: {self.description}"
-        )
+        parts = [
+            "####### Vulnerability Detection Method",
+            f"Method: {self.method}" if self.method else "",
+            f"Effectiveness: {self.effectiveness}" if self.effectiveness else "",
+            f"Description: {self.description}" if self.description else "",
+        ]
+        return "\n".join(part for part in parts if part)
 
 
 class CweDto(BaseModel):
@@ -155,18 +169,29 @@ class CweDto(BaseModel):
         )
         capecs_str = "\n".join([capec.to_readable_str() for capec in self.capecs])
 
-        return (
-            "#### CWE\n"
-            f"CWE ID: {self.cwe_id}\n"
-            f"Name: {self.name}\n"
-            f"Description: {self.description}\n"
-            f"Extended Description: {self.extended_description}\n"
-            f"Likelihood of Exploit: {self.likelihood_of_exploit}\n"
-            f"Background Details:\n{background_details}\n"
-            f"Potential Mitigations:\n{potential_mitigations_str}\n"
-            f"Detection Methods:\n{detection_methods_str}\n"
-            f"CAPECs:\n{capecs_str}"
-        )
+        parts = [
+            "##### CWE",
+            f"CWE ID: {self.cwe_id}",
+            f"Name: {self.name}",
+            f"Description: {self.description}",
+            f"Extended Description: {self.extended_description}"
+            if self.extended_description
+            else "",
+            f"Likelihood of Exploit: {self.likelihood_of_exploit}"
+            if self.likelihood_of_exploit
+            else "",
+            f"###### Background Details\n{background_details}"
+            if background_details
+            else "",
+            f"###### Potential Mitigations\n{potential_mitigations_str}"
+            if potential_mitigations_str
+            else "",
+            f"###### Detection Methods\n{detection_methods_str}"
+            if detection_methods_str
+            else "",
+            f"###### CAPECs\n{capecs_str}" if capecs_str else "",
+        ]
+        return "\n".join(part for part in parts if part)
 
 
 #################
@@ -190,15 +215,16 @@ class VulnerabilityDto(BaseModel):
         )
 
     def to_readable_str(self) -> str:
-        cwes_str = "\n".join([cwe.to_readable_str() for cwe in self.cwes])
-
-        return (
-            "### Vulnerability\n"
-            f"Vulnerability: {self.cve_id}\n"
-            f"Description: {self.description}\n"
-            f"Score: {self.score}\n"
-            f"CWEs:\n{cwes_str}"
-        )
+        parts = [
+            "### Vulnerability",
+            f"CVE ID: {self.cve_id}" if self.cve_id else "",
+            f"Description: {self.description}" if self.description else "",
+            f"Score: {self.score}" if self.score else "",
+            f"#### CWEs\n{''.join(cwe.to_readable_str() for cwe in self.cwes)}"
+            if self.cwes
+            else "",
+        ]
+        return "\n".join(part for part in parts if part)
 
 
 class PatchEvaluationDto(BaseModel):
@@ -215,12 +241,13 @@ class PatchEvaluationDto(BaseModel):
         )
 
     def to_readable_str(self) -> str:
-        return (
-            "## Patch Info\n"
-            f"Version: {self.name}\n"
-            f"Build: {self.build}\n"
-            f"OS: {self.os}"
-        )
+        parts = [
+            "## Patch Info",
+            f"Version: {self.name}",
+            f"Build: {self.build}",
+            f"OS: {self.os}",
+        ]
+        return "\n".join(part for part in parts if part)
 
 
 class DeviceDto(BaseModel):
@@ -243,14 +270,18 @@ class DeviceDto(BaseModel):
         )
 
     def to_readable_str(self) -> str:
-        return (
-            f"## Device Info\n"
-            f"{self.manufacturer.capitalize()} {self.name}\n"
-            f"Identifier: {self.identifier}\n"
-            f"Models: {', '.join(self.models)}\n"
-            f"Released: {self.released}\n"
-            f"Discontinued: {self.discontinued}"
-        )
+        models = ", ".join(self.models)
+        parts = [
+            "## Device Info",
+            f"Device: {self.manufacturer.capitalize()} {self.name}"
+            if self.manufacturer and self.name
+            else "",
+            f"Identifier: {self.identifier}" if self.identifier else "",
+            f"Models: {models}" if self.models else "",
+            f"Released: {self.released}" if self.released else "",
+            f"Discontinued: {self.discontinued}" if self.discontinued else "",
+        ]
+        return "\n".join(part for part in parts if part)
 
 
 class EvaluationDto(BaseModel):
@@ -280,9 +311,10 @@ class EvaluationDto(BaseModel):
             [v.to_readable_str() for v in self.vulnerabilities]
         )
 
-        return (
-            "# Evaluation\n"
-            f"{device_str}\n"
-            f"{patch_str}\n"
-            f"## Vulnerabilities\n{vulnerabilities_str}"
-        )
+        parts = [
+            "# Evaluation",
+            f"{device_str}",
+            f"{patch_str}",
+            f"## Vulnerabilities\n{vulnerabilities_str}",
+        ]
+        return "\n".join(part for part in parts if part)
