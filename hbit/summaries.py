@@ -19,11 +19,13 @@ class AiSummaryService(SummaryService):
     def generate_summary(
         self, question: str, evaluation: common_dto.EvaluationDto
     ) -> str:
+        # TODO: Give this summary more structure
+        # TODO: Shouldn't I use system prompt for something?
         prompt = (
             "Given the following user question, and devices evaluation,"
             "answer the user question.\n\n"
             f"Question: {question}\n"
-            f"Evaluation: {evaluation.to_readable_str()}"
+            f"{evaluation.to_readable_str()}"
         )
         response: AIMessage = self.model.invoke(prompt)  # type: ignore
         return str(response.content)

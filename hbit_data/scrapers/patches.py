@@ -56,6 +56,8 @@ class PatchScraper(base.Scraper[dto.Patch]):
             return False
         if "sdk" in raw_patch.get("version", "").lower():
             return False
+        if "internalui" in raw_patch.get("version", "").lower():
+            return False
         if version <= self.min_version:
             return False
         return True

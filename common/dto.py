@@ -19,7 +19,12 @@ class AttackStepDto(BaseModel):
     techniques: list[str] = []
 
     def to_readable_str(self) -> str:
-        return f"{self.step}. {self.phase}: {self.description} ({', '.join(self.techniques)})\n"
+        techniques = ", ".join(self.techniques)
+        return (
+            f"###### {self.step}. ({self.phase})\n"
+            f"Techniques: {techniques if techniques else "[]"}\n"
+            f"Description: {self.description}"
+        )
 
 
 class SkillDto(BaseModel):
@@ -27,7 +32,7 @@ class SkillDto(BaseModel):
     description: str
 
     def to_readable_str(self) -> str:
-        return f"{self.level}: {self.description}\n"
+        return f"{self.level}: {self.description}"
 
 
 class CAPECDto(BaseModel):
@@ -64,21 +69,22 @@ class CAPECDto(BaseModel):
         skills_required_str = "\n".join(
             [skill.to_readable_str() for skill in self.skills_required]
         )
-        prerequisites_str = ", ".join(self.prerequisites)
-        resources_required_str = ", ".join(self.resources_required)
-        consequences_str = ", ".join(self.consequences)
+        prerequisites_str = "\n".join(self.prerequisites)
+        resources_required_str = "\n".join(self.resources_required)
+        consequences_str = "\n".join(self.consequences)
 
         return (
+            "##### CAPEC\n"
             f"CAPEC ID: {self.capec_id}\n"
             f"Description: {self.description}\n"
             f"Extended Description: {self.extended_description}\n"
             f"Likelihood of Attack: {self.likelihood_of_attack}\n"
             f"Severity: {self.severity}\n"
-            f"Execution Flow:\n{execution_flow_str}\n"
-            f"Prerequisites: {prerequisites_str}\n"
-            f"Skills Required:\n{skills_required_str}\n"
-            f"Resources Required: {resources_required_str}\n"
-            f"Consequences: {consequences_str}\n"
+            f"Execution Flow:\n{execution_flow_str if execution_flow_str else "[]"}\n"
+            f"Prerequisites:\n{prerequisites_str if prerequisites_str else "[]"}\n"
+            f"Skills Required:\n{skills_required_str if skills_required_str else "[]"}\n"
+            f"Resources Required:\n{resources_required_str if resources_required_str else "[]"}\n"
+            f"Consequences:\n{consequences_str if consequences_str else "[]"}"
         )
 
 
@@ -93,7 +99,11 @@ class MitigationDto(BaseModel):
     effectiveness_notes: str
 
     def to_readable_str(self) -> str:
-        return f"{self.description} ({self.effectiveness})\n"
+        return (
+            "##### Attack Mitigation Strategies\n"
+            f"Effectiveness: {self.effectiveness}\n"
+            f"Description: {self.description}"
+        )
 
 
 class DetectionMethodDto(BaseModel):
@@ -102,7 +112,12 @@ class DetectionMethodDto(BaseModel):
     effectiveness: str
 
     def to_readable_str(self) -> str:
-        return f"{self.method}: {self.description} ({self.effectiveness})\n"
+        return (
+            "##### Vulnerability Detection Method\n"
+            f"Method: {self.method}\n"
+            f"Effectiveness: {self.effectiveness}\n"
+            f"Description: {self.description}"
+        )
 
 
 class CweDto(BaseModel):
@@ -134,21 +149,23 @@ class CweDto(BaseModel):
         potential_mitigations_str = "\n".join(
             [mitigation.to_readable_str() for mitigation in self.potential_mitigations]
         )
+        background_details = "\n".join(self.background_details)
         detection_methods_str = "\n".join(
             [method.to_readable_str() for method in self.detection_methods]
         )
         capecs_str = "\n".join([capec.to_readable_str() for capec in self.capecs])
 
         return (
+            "#### CWE\n"
             f"CWE ID: {self.cwe_id}\n"
             f"Name: {self.name}\n"
             f"Description: {self.description}\n"
             f"Extended Description: {self.extended_description}\n"
             f"Likelihood of Exploit: {self.likelihood_of_exploit}\n"
-            f"Background Details: {', '.join(self.background_details)}\n"
+            f"Background Details:\n{background_details}\n"
             f"Potential Mitigations:\n{potential_mitigations_str}\n"
             f"Detection Methods:\n{detection_methods_str}\n"
-            f"CAPECs:\n{capecs_str}\n"
+            f"CAPECs:\n{capecs_str}"
         )
 
 
@@ -176,10 +193,11 @@ class VulnerabilityDto(BaseModel):
         cwes_str = "\n".join([cwe.to_readable_str() for cwe in self.cwes])
 
         return (
+            "### Vulnerability\n"
             f"Vulnerability: {self.cve_id}\n"
             f"Description: {self.description}\n"
             f"Score: {self.score}\n"
-            f"CWEs:\n{cwes_str}\n"
+            f"CWEs:\n{cwes_str}"
         )
 
 
@@ -197,7 +215,12 @@ class PatchEvaluationDto(BaseModel):
         )
 
     def to_readable_str(self) -> str:
-        return f"Patch: {self.name} ({self.build}) for {self.os}\n"
+        return (
+            "## Patch Info\n"
+            f"Version: {self.name}\n"
+            f"Build: {self.build}\n"
+            f"OS: {self.os}"
+        )
 
 
 class DeviceDto(BaseModel):
@@ -221,11 +244,12 @@ class DeviceDto(BaseModel):
 
     def to_readable_str(self) -> str:
         return (
-            f"{self.manufacturer} {self.name}\n"
+            f"## Device Info\n"
+            f"{self.manufacturer.capitalize()} {self.name}\n"
             f"Identifier: {self.identifier}\n"
             f"Models: {', '.join(self.models)}\n"
             f"Released: {self.released}\n"
-            f"Discontinued: {self.discontinued}\n"
+            f"Discontinued: {self.discontinued}"
         )
 
 
@@ -256,4 +280,9 @@ class EvaluationDto(BaseModel):
             [v.to_readable_str() for v in self.vulnerabilities]
         )
 
-        return device_str + patch_str + vulnerabilities_str
+        return (
+            "# Evaluation\n"
+            f"{device_str}\n"
+            f"{patch_str}\n"
+            f"## Vulnerabilities\n{vulnerabilities_str}"
+        )

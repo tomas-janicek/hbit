@@ -5,6 +5,7 @@ from common import requests
 from hbit import clients, settings
 
 
+# TODO: Create tools for agent
 @tool
 def get_device_vulnerabilities(
     device_identifier: str, patch_name: str

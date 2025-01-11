@@ -1,27 +1,16 @@
 import typing
-from typing import Annotated
 
-from groq import BaseModel
 from langchain import hub
 from langchain.schema import BaseMessage
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.tools.sql_database.tool import QuerySQLDataBaseTool
-from langchain_community.utilities import SQLDatabase
 from langchain_core.language_models import BaseChatModel
 from langgraph.func import START  # type: ignore
 from langgraph.graph import StateGraph  # type: ignore
 from langgraph.prebuilt import create_react_agent  # type: ignore
 from typing_extensions import TypedDict
 
-from hbit import evaluations, extractors, settings, summaries
-
-db = SQLDatabase.from_uri(settings.READ_SQLALCHEMY_DATABASE_URI)
-
-
-class QueryOutput(BaseModel):
-    """Generated SQL query."""
-
-    query: Annotated[str, ..., "Syntactically valid SQL query."]
+from hbit import core, dto, evaluations, extractors, summaries
 
 
 class State(TypedDict):
@@ -32,9 +21,10 @@ class State(TypedDict):
 
 
 class AgentDeviceEvaluator:
-    def __init__(self, model: BaseChatModel) -> None:
+    def __init__(self, model: BaseChatModel, db: core.DatabaseService) -> None:
+        self.db = db
         self.model = model
-        self.toolkit = SQLDatabaseToolkit(db=db, llm=self.model)
+        self.toolkit = SQLDatabaseToolkit(db=self.db.db_tool, llm=self.model)
         tools = self.toolkit.get_tools()
         prompt_template = hub.pull("langchain-ai/sql-agent-system-prompt")
         system_message = prompt_template.format(dialect="SQLite", top_k=5)
@@ -57,9 +47,10 @@ class AgentDeviceEvaluator:
 
 
 class ChainDeviceEvaluator:
-    def __init__(self, model: BaseChatModel) -> None:
+    def __init__(self, model: BaseChatModel, db: core.DatabaseService) -> None:
         self.model = model
         self.query_prompt_template = hub.pull("langchain-ai/sql-query-system-prompt")
+        self.db = db
         graph_builder = StateGraph(State).add_sequence(
             [self.write_query, self.execute_query, self.generate_answer]
         )
@@ -72,19 +63,19 @@ class ChainDeviceEvaluator:
         # TODO: And how to describe how its should do it? Do I even have to?
         prompt = self.query_prompt_template.invoke(
             {
-                "dialect": db.dialect,
+                "dialect": self.db.dialect,
                 "top_k": 10,
-                "table_info": db.get_table_info(),
+                "table_info": self.db.get_table_info(),
                 "input": state["question"],
             }
         )
-        structured_llm = self.model.with_structured_output(QueryOutput)  # type: ignore
-        result: QueryOutput = structured_llm.invoke(prompt)  # type: ignore
+        structured_llm = self.model.with_structured_output(dto.QueryOutput)  # type: ignore
+        result: dto.QueryOutput = structured_llm.invoke(prompt)  # type: ignore
         return {"query": result.query}
 
     def execute_query(self, state: State):
         """Execute SQL query."""
-        execute_query_tool = QuerySQLDataBaseTool(db=db)
+        execute_query_tool = QuerySQLDataBaseTool(db=self.db.db_tool)
         return {"result": execute_query_tool.invoke(state["query"])}
 
     def generate_answer(self, state: State) -> dict[str, typing.Any]:

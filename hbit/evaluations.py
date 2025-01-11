@@ -4,7 +4,7 @@ import pydantic
 from langchain_core.language_models import BaseChatModel
 
 from common import dto as common_dto
-from hbit import clients
+from hbit import clients, dto
 
 
 class EvaluationService(typing.Protocol):
@@ -17,18 +17,16 @@ class EvaluationService(typing.Protocol):
     ) -> common_dto.EvaluationDto: ...
 
 
-class VulnerabilitiesDto(pydantic.BaseModel):
-    vulnerabilities: list[common_dto.VulnerabilityDto]
-
-
 class AiEvaluationService(EvaluationService):
     def __init__(
         self,
         model: BaseChatModel,
         client: clients.HBITClient,
-        n_vulnerabilities: int = 10,
+        n_vulnerabilities: int = 5,
     ) -> None:
-        self.vulnerability_summarizer = model.with_structured_output(VulnerabilitiesDto)
+        self.vulnerability_summarizer = model.with_structured_output(
+            dto.VulnerabilitiesDto
+        )
         self.client = client
         self.n_vulnerabilities = n_vulnerabilities
 
@@ -53,7 +51,7 @@ class AiEvaluationService(EvaluationService):
             "Here is the list of vulnerabilities:\n\n"
             f"{vuls_str.decode('utf-8')}"
         )
-        trimmed_vulnerabilities: VulnerabilitiesDto = (
+        trimmed_vulnerabilities: dto.VulnerabilitiesDto = (
             self.vulnerability_summarizer.invoke(prompt)
         )  # type: ignore
         evaluation.vulnerabilities = trimmed_vulnerabilities.vulnerabilities
@@ -61,8 +59,13 @@ class AiEvaluationService(EvaluationService):
 
 
 class IterativeEvaluationService(EvaluationService):
-    def __init__(self, client: clients.HBITClient) -> None:
+    def __init__(
+        self,
+        client: clients.HBITClient,
+        n_vulnerabilities: int = 5,
+    ) -> None:
         self.client = client
+        self.n_vulnerabilities = n_vulnerabilities
 
     def get_full_evaluation(
         self, device_identifier: str, patch_build: str
@@ -73,9 +76,10 @@ class IterativeEvaluationService(EvaluationService):
         self, device_identifier: str, patch_build: str
     ) -> common_dto.EvaluationDto:
         evaluation = self.get_full_evaluation(device_identifier, patch_build)
-        evaluation.vulnerabilities = self._trim_vulnerabilities(
-            evaluation.vulnerabilities
-        )
+        vulnerabilities = self._trim_vulnerabilities(evaluation.vulnerabilities)
+        vulnerabilities.sort(key=lambda v: v.score, reverse=True)
+        vulnerabilities = vulnerabilities[: self.n_vulnerabilities]
+        evaluation.vulnerabilities = vulnerabilities
         return evaluation
 
     def _trim_vulnerabilities(
