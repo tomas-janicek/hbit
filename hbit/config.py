@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str
     MODEL_SEED: int = 0
 
+    N_VULNERABILITIES: int = 2
+
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

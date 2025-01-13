@@ -11,6 +11,7 @@ from langgraph.prebuilt import create_react_agent  # type: ignore
 from typing_extensions import TypedDict
 
 from hbit import core, dto, evaluations, extractors, summaries
+from hbit.tools import TOOLS
 
 
 class State(TypedDict):
@@ -24,8 +25,8 @@ class AgentDeviceEvaluator:
     def __init__(self, model: BaseChatModel, db: core.DatabaseService) -> None:
         self.db = db
         self.model = model
-        self.toolkit = SQLDatabaseToolkit(db=self.db.db_tool, llm=self.model)
-        tools = self.toolkit.get_tools()
+        toolkit = SQLDatabaseToolkit(db=self.db.db_tool, llm=self.model)
+        tools = [*toolkit.get_tools(), *TOOLS]
         prompt_template = hub.pull("langchain-ai/sql-agent-system-prompt")
         system_message = prompt_template.format(dialect="SQLite", top_k=5)
         self.agent_executor = create_react_agent(

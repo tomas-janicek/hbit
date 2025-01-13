@@ -4,7 +4,7 @@ import pydantic
 from langchain_core.language_models import BaseChatModel
 
 from common import dto as common_dto
-from hbit import clients, dto
+from hbit import clients, dto, settings
 
 
 class EvaluationService(typing.Protocol):
@@ -22,7 +22,7 @@ class AiEvaluationService(EvaluationService):
         self,
         model: BaseChatModel,
         client: clients.HBITClient,
-        n_vulnerabilities: int = 5,
+        n_vulnerabilities: int = settings.N_VULNERABILITIES,
     ) -> None:
         self.vulnerability_summarizer = model.with_structured_output(
             dto.VulnerabilitiesDto
@@ -39,6 +39,7 @@ class AiEvaluationService(EvaluationService):
         self, device_identifier: str, patch_build: str
     ) -> common_dto.EvaluationDto:
         evaluation = self.get_full_evaluation(device_identifier, patch_build)
+
         vuls_type_adapter = pydantic.TypeAdapter(list[common_dto.VulnerabilityDto])
         vuls_str = vuls_type_adapter.dump_json(evaluation.vulnerabilities)
         prompt = (
@@ -62,7 +63,7 @@ class IterativeEvaluationService(EvaluationService):
     def __init__(
         self,
         client: clients.HBITClient,
-        n_vulnerabilities: int = 5,
+        n_vulnerabilities: int = settings.N_VULNERABILITIES,
     ) -> None:
         self.client = client
         self.n_vulnerabilities = n_vulnerabilities
