@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str
     MODEL_SEED: int = 0
 
-    N_VULNERABILITIES: int = 2
+    N_VULNERABILITIES: int = 10
+    N_TOKEN_GENERATION_LIMIT: int = 15_000
 
     @computed_field
     @property

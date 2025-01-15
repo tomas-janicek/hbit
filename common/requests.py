@@ -14,6 +14,16 @@ ResponseT = typing.TypeVar("ResponseT")
 
 
 class Requests:
+    def get_or_retry(
+        self,
+        *,
+        base: str,
+        path: str,
+        response_type: type[ResponseT],
+        timeout: int,
+        params: dict[str, typing.Any] | None = None,
+    ) -> ResponseT: ...
+
     def get(
         self,
         *,
@@ -24,6 +34,16 @@ class Requests:
         params: dict[str, typing.Any] | None = None,
     ) -> ResponseT: ...
 
+    def post_or_retry(
+        self,
+        *,
+        base: str,
+        path: str,
+        content: bytes,
+        timeout: int,
+        params: dict[str, typing.Any] | None = None,
+    ) -> None: ...
+
     def post(
         self,
         *,
@@ -31,6 +51,7 @@ class Requests:
         path: str,
         content: bytes,
         timeout: int,
+        params: dict[str, typing.Any] | None = None,
     ) -> None: ...
 
 
@@ -45,6 +66,23 @@ class HTTPXRequests(Requests):
         wait_max=60,
         wait_exp_base=2,
     )
+    def get_or_retry(
+        self,
+        *,
+        base: str,
+        path: str,
+        response_type: type[ResponseT],
+        timeout: int,
+        params: dict[str, typing.Any] | None = None,
+    ) -> ResponseT:
+        return self.get(
+            base=base,
+            path=path,
+            response_type=response_type,
+            timeout=timeout,
+            params=params,
+        )
+
     def get(
         self,
         *,
@@ -79,6 +117,23 @@ class HTTPXRequests(Requests):
         wait_max=60,
         wait_exp_base=2,
     )
+    def post_or_retry(
+        self,
+        *,
+        base: str,
+        path: str,
+        content: bytes,
+        timeout: int,
+        params: dict[str, typing.Any] | None = None,
+    ) -> None:
+        return self.post(
+            base=base,
+            path=path,
+            content=content,
+            timeout=timeout,
+            params=params,
+        )
+
     def post(
         self,
         *,
@@ -86,10 +141,13 @@ class HTTPXRequests(Requests):
         path: str,
         content: bytes,
         timeout: int,
+        params: dict[str, typing.Any] | None = None,
     ) -> None:
         url = utils.create_url(base, path)
         try:
-            response = self.client.post(url, content=content, timeout=timeout)
+            response = self.client.post(
+                url, params=params, content=content, timeout=timeout
+            )
             response.raise_for_status()
         except httpx.RequestError as exc:
             _log.error("An error occurred while requesting %s.", exc.request.url)

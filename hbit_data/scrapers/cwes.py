@@ -39,8 +39,8 @@ class CWEScraper(base.Scraper[dto.CWE]):
         detection_methods = self._create_detection_methods(weakness)
 
         cwe = dto.CWE(
-            cwe_id=cwe_id if cwe_id is not None else cwe_id,  # type: ignore
-            name=name if name is not None else name,  # type: ignore
+            cwe_id=cwe_id,  # type: ignore
+            name=name,  # type: ignore
             description=utils.get_all_text(description),
             extended_description=utils.get_all_text(extended_description),
             likelihood_of_exploit=utils.get_all_text(likelihood_of_exploit),

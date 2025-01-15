@@ -14,7 +14,7 @@ class iPhoneScraper(base.Scraper[dto.Device]):
         self.devices_path = "/device/main.json"
 
     def scrape(self) -> Iterator[dto.Device]:
-        data = self.request.get(
+        data = self.request.get_or_retry(
             base=self.apple_db,
             path=self.devices_path,
             response_type=list[dict[str, typing.Any]],

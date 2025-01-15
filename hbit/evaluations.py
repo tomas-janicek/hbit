@@ -40,6 +40,10 @@ class AiEvaluationService(EvaluationService):
     ) -> common_dto.EvaluationDto:
         evaluation = self.get_full_evaluation(device_identifier, patch_build)
 
+        # TODO: First, pick x vuls and create AI summaries for them. Make sure they have max pre-defined number of tokens.
+        # TODO: If one vulnerability can be bigger than context,trim data inside vulnerability.
+        # TODO: Then use this summaries to create one big summary.
+
         vuls_type_adapter = pydantic.TypeAdapter(list[common_dto.VulnerabilityDto])
         vuls_str = vuls_type_adapter.dump_json(evaluation.vulnerabilities)
         prompt = (

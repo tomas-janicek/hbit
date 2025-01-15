@@ -3,11 +3,9 @@ import typing
 
 from langchain.prompts import (
     ChatPromptTemplate,
-    FewShotChatMessagePromptTemplate,
 )
 from langchain_core.language_models import BaseChatModel
-from langchain_core.prompt_values import PromptValue
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import RunnableSerializable
 from sqlalchemy import text as _text
 
 from hbit import core, dto
@@ -16,33 +14,17 @@ from . import base
 
 _log = logging.getLogger(__name__)
 
-example_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("human", "{input}"),
-        ("ai", "{output}"),
-    ]
-)
-
 
 class StructurePatchExtractor(base.PatchExtractor):
-    patch_examples: typing.ClassVar[list[dict[str, str]]] = [
-        {
-            "input": "How secure is my iPhone 13 Pro patch if I have patch 18.1.0 installed identified by build 22B83.",
-            "output": dto.Patch(build="22B83", version="18.1.0").model_dump_json(),
-        },
-        {
-            "input": "The latest patch for my device is 17.7.2.",
-            "output": dto.Patch(build=None, version="17.7.2").model_dump_json(),
-        },
-        {
-            "input": "What version does my patch with build 22B83 have?",
-            "output": dto.Patch(build="22B83", version=None).model_dump_json(),
-        },
-    ]
-    few_shot_prompt = FewShotChatMessagePromptTemplate(
-        example_prompt=example_prompt,
-        examples=patch_examples,
+    examples = (
+        "Input Example: 'How secure is my iPhone 13 Pro patch if I have patch 18.1.0 installed identified by build 22B83.'\n"
+        f"Output Example: {{{dto.Patch(build='22B83', version='18.1.0').model_dump_json()}}}\n\n"
+        "Input Example: 'The latest patch for my device is 17.7.2.'\n"
+        f"Output Example: {{{dto.Patch(build=None, version='17.7.2').model_dump_json()}}}\n\n"
+        "Input Example: 'What version does my patch with build 22B83 have?'\n"
+        f"Output Example: {{{dto.Patch(build='22B83', version=None).model_dump_json()}}}\n\n"
     )
+
     prompt_template = ChatPromptTemplate.from_messages(
         [
             (
@@ -51,9 +33,9 @@ class StructurePatchExtractor(base.PatchExtractor):
                 "Only extract relevant information from the text. "
                 "Make sure you only extract the values of the attributes mentioned in the question. "
                 "If you do not know the value of an attribute asked to extract, "
-                "return null for the attribute's value.",
+                "return null for the attribute's value.\n\n"
+                "{examples}",
             ),
-            few_shot_prompt,
             ("human", "{input}"),
         ]
     )
@@ -61,8 +43,8 @@ class StructurePatchExtractor(base.PatchExtractor):
     def __init__(self, model: BaseChatModel, db: core.DatabaseService) -> None:
         self.model = model
         self.db = db
-        self.extractor_model: Runnable[PromptValue, dto.Patch] = (
-            self.model.with_structured_output(schema=dto.Patch)
+        self.extractor_model: RunnableSerializable[dict[str, typing.Any], dto.Patch] = (
+            self.prompt_template | self.model.with_structured_output(schema=dto.Patch)
         )  # type: ignore
 
     def extract_patch_build(self, text: str) -> str | None:
@@ -85,34 +67,22 @@ class StructurePatchExtractor(base.PatchExtractor):
         return result
 
     def extract_patch_info(self, text: str) -> dto.Patch:
-        prompt = self.prompt_template.invoke({"input": text})
-        patch = self.extractor_model.invoke(prompt)
+        patch = self.extractor_model.invoke({"input": text, "examples": self.examples})
         return patch
 
 
 class SqlPatchExtractor(base.PatchExtractor):
-    patch_examples: typing.ClassVar[list[dict[str, str]]] = [
-        {
-            "input": "How secure is my iPhone 13 Pro patch if I have patch 18.0.1 installed identified by build 22B83.",
-            "output": "SELECT build FROM patches WHERE build LIKE '22B83' AND version LIKE '18.0.1'",
-        },
-        {
-            "input": "The latest patch for my device is 17.7.2.",
-            "output": "SELECT build FROM patches WHERE version LIKE '17.7.2'",
-        },
-        {
-            "input": "What version does my patch with build 22B83 have?",
-            "output": "SELECT build FROM patches WHERE build LIKE '22B83'",
-        },
-        {
-            "input": "How secure is an iPhone XS running iOS 17.0.2? Are there any known vulnerabilities or security concerns with this version?",
-            "output": "SELECT build FROM patches WHERE version LIKE '17.0.2'",
-        },
-    ]
-    few_shot_prompt = FewShotChatMessagePromptTemplate(
-        example_prompt=example_prompt,
-        examples=patch_examples,
+    examples = (
+        "Input Example: How secure is my iPhone 13 Pro patch if I have patch 18.0.1 installed identified by build 22B83.\n"
+        "Output Example: SELECT build FROM patches WHERE build LIKE '22B83' AND version LIKE '18.0.1'\n\n"
+        "Input Example: The latest patch for my device is 17.7.2.\n"
+        "Output Example: SELECT build FROM patches WHERE version LIKE '17.7.2'\n\n"
+        "Input Example: What version does my patch with build 22B83 have?\n"
+        "Output Example: SELECT build FROM patches WHERE build LIKE '22B83'\n\n"
+        "Input Example: How secure is an iPhone XS running iOS 17.0.2? Are there any known vulnerabilities or security concerns with this version?\n"
+        "Output Example: SELECT build FROM patches WHERE version LIKE '17.0.2'\n\n"
     )
+
     query_prompt_template = ChatPromptTemplate.from_messages(
         [
             (
@@ -126,9 +96,10 @@ class SqlPatchExtractor(base.PatchExtractor):
                 "4. Use `LIKE` for string matching to ensure case-insensitive filtering.\n"
                 "5. Completely ignore JSON fields.\n\n"
                 "The schema of the `patches` table is as follows:\n"
-                "{table_info}\n",
+                "{table_info}\n"
+                "Examples:"
+                "{examples}",
             ),
-            few_shot_prompt,
             ("user", "Question: {input}"),
         ]
     )
@@ -136,6 +107,12 @@ class SqlPatchExtractor(base.PatchExtractor):
     def __init__(self, model: BaseChatModel, db: core.DatabaseService) -> None:
         self.model = model
         self.db = db
+
+        self.structured_llm: RunnableSerializable[
+            dict[str, typing.Any], dto.QueryOutput
+        ] = self.query_prompt_template | self.model.with_structured_output(
+            dto.QueryOutput
+        )  # type: ignore
 
     def extract_patch_build(self, text: str) -> str:
         query_output = self.create_extraction_query(text)
@@ -147,16 +124,14 @@ class SqlPatchExtractor(base.PatchExtractor):
     def create_extraction_query(self, question: str) -> dto.QueryOutput:
         patches_table_info = self.db.get_table_info(["patches"])
 
-        prompt = self.query_prompt_template.invoke(
+        result: dto.QueryOutput = self.structured_llm.invoke(
             {
                 "dialect": self.db.dialect,
                 "table_info": patches_table_info,
                 "input": question,
+                "examples": self.examples,
             }
         )
-
-        structured_llm = self.model.with_structured_output(dto.QueryOutput)  # type: ignore
-        result: dto.QueryOutput = structured_llm.invoke(prompt)  # type: ignore
         return result
 
     def execute_query(self, query: str) -> str:

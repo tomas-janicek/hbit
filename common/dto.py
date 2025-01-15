@@ -1,10 +1,14 @@
 import datetime
+import logging
 import typing
 
 from pydantic import BaseModel
 
 if typing.TYPE_CHECKING:
     from hbit_api.domain import models
+
+
+_log = logging.getLogger(__name__)
 
 
 #########
@@ -205,6 +209,11 @@ class VulnerabilityDto(BaseModel):
     score: float
     cwes: list[CweDto] = []
 
+    @property
+    def n_json_tokens(self) -> int:
+        json = self.model_dump_json()
+        return len(json)
+
     @classmethod
     def from_cve(cls, cve: "models.CVE") -> typing.Self:
         return cls(
@@ -318,3 +327,27 @@ class EvaluationDto(BaseModel):
             f"## Vulnerabilities\n{vulnerabilities_str}",
         ]
         return "\n".join(part for part in parts if part)
+
+    def get_chunked_by_n_tokens(
+        self, n_max_tokens: int
+    ) -> typing.Iterator["EvaluationDto"]:
+        n_prepared_tokens = 0
+        chunked_vuls: list[VulnerabilityDto] = []
+        for vul in self.vulnerabilities:
+            if vul.n_json_tokens > n_max_tokens:
+                _log.warning(
+                    "Vulnerability with ID %s can't be summarized because it is too big (it has %s tokens).",
+                    vul.cve_id,
+                    vul.n_json_tokens,
+                )
+            elif n_prepared_tokens + vul.n_json_tokens > n_max_tokens:
+                yield EvaluationDto(
+                    device=self.device,
+                    patch=self.patch,
+                    vulnerabilities=chunked_vuls,
+                )
+                n_prepared_tokens = vul.n_json_tokens
+                chunked_vuls = [vul]
+            else:
+                n_prepared_tokens += vul.n_json_tokens
+                chunked_vuls.append(vul)

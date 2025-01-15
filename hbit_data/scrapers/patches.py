@@ -14,7 +14,7 @@ class PatchScraper(base.Scraper[dto.Patch]):
         self.min_version = normalizer.VersionStr.normalize_version("15.0.0")
 
     def scrape(self) -> typing.Iterator[dto.Patch]:
-        data = self.request.get(
+        data = self.request.get_or_retry(
             base=self.apple_db,
             path=self.ios_patches_path,
             response_type=list[dict[str, typing.Any]],

@@ -18,7 +18,7 @@ class CVEScraper(base.Scraper[dto.CVE]):
     def scrape(self) -> typing.Iterator[dto.CVE]:
         params = self._create_nvd_params()
 
-        data = self.request.get(
+        data = self.request.get_or_retry(
             base=self.nvd_base,
             path="",
             response_type=dict[str, typing.Any],

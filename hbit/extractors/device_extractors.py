@@ -3,11 +3,9 @@ import typing
 
 from langchain.prompts import (
     ChatPromptTemplate,
-    FewShotChatMessagePromptTemplate,
 )
 from langchain_core.language_models import BaseChatModel
-from langchain_core.prompt_values import PromptValue
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import RunnableSerializable
 from sqlalchemy import text as _text
 
 from hbit import core, dto
@@ -17,51 +15,20 @@ from . import base
 _log = logging.getLogger(__name__)
 
 
-example_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("human", "{input}"),
-        ("ai", "{output}"),
-    ]
-)
-
-
 class StructureDeviceExtractor(base.DeviceExtractor):
-    device_examples: typing.ClassVar[list[dict[str, str]]] = [
-        {
-            "input": "How secure is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83.",
-            "output": dto.Device(
-                identifier=None, name="iPhone 13 Pro", manufacturer=None, model=None
-            ).model_dump_json(),
-        },
-        {
-            "input": "How secure is my device with model Apple device with model A2483.",
-            "output": dto.Device(
-                identifier=None, name=None, manufacturer="Apple", model="a2483"
-            ).model_dump_json(),
-        },
-        {
-            "input": "Should I buy new phone if I have iphone14,2.",
-            "output": dto.Device(
-                identifier="iphone14,2", name=None, manufacturer=None, model=None
-            ).model_dump_json(),
-        },
-        {
-            "input": "Is iPhone 6 and iphone7,2 the same device?",
-            "output": dto.Device(
-                identifier="iphone7,2", name="iPhone 6", manufacturer=None, model=None
-            ).model_dump_json(),
-        },
-        {
-            "input": "How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?",
-            "output": dto.Device(
-                identifier=None, name="iPhone XS", manufacturer=None, model=None
-            ).model_dump_json(),
-        },
-    ]
-    few_shot_prompt = FewShotChatMessagePromptTemplate(
-        example_prompt=example_prompt,
-        examples=device_examples,
+    examples = (
+        "Input Example: 'How secure is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83.'\n"
+        f"Output Example: {{{dto.Device(identifier=None, name='iPhone 13 Pro', manufacturer=None, model=None).model_dump_json()}}}\n\n"
+        "Input Example: 'How secure is my device with model Apple device with model A2483.'\n"
+        f"Output Example: {{{dto.Device(identifier=None, name=None, manufacturer='Apple', model='a2483').model_dump_json()}}}\n\n"
+        "Input Example: 'Should I buy new phone if I have iphone14,2.'\n"
+        f"Output Example: {{{dto.Device(identifier='iphone14,2', name=None, manufacturer=None, model=None).model_dump_json()}}}\n\n"
+        "Input Example: 'Is iPhone 6 and iphone7,2 the same device?'\n"
+        f"Output Example: {{{dto.Device(identifier='iphone7,2', name='iPhone 6', manufacturer=None, model=None).model_dump_json()}}}\n\n"
+        "Input Example: 'How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?'\n"
+        f"Output Example: {{{dto.Device(identifier=None, name='iPhone XS', manufacturer=None, model=None).model_dump_json()}}}\n\n"
     )
+
     prompt_template = ChatPromptTemplate.from_messages(
         [
             (
@@ -70,9 +37,9 @@ class StructureDeviceExtractor(base.DeviceExtractor):
                 "Only extract relevant information from the text. "
                 "Make sure you only extract the values of the attributes mentioned in the question. "
                 "If you do not know the value of an attribute asked to extract, "
-                "return null for the attribute's value.",
+                "return null for the attribute's value.\n\n"
+                "{examples}",
             ),
-            few_shot_prompt,
             ("human", "{input}"),
         ]
     )
@@ -80,7 +47,9 @@ class StructureDeviceExtractor(base.DeviceExtractor):
     def __init__(self, model: BaseChatModel, db: core.DatabaseService) -> None:
         self.model = model
         self.db = db
-        self.extractor_model: Runnable[PromptValue, dto.Device] = (
+        self.extractor_model: RunnableSerializable[
+            dict[str, typing.Any], dto.Device
+        ] = self.prompt_template | (
             self.model.with_structured_output(schema=dto.Device)
         )  # type: ignore
 
@@ -110,37 +79,22 @@ class StructureDeviceExtractor(base.DeviceExtractor):
         return result
 
     def extract_device_info(self, text: str) -> dto.Device:
-        prompt = self.prompt_template.invoke({"input": text})
-        device = self.extractor_model.invoke(prompt)
+        device = self.extractor_model.invoke({"input": text, "examples": self.examples})
         return device
 
 
 class SqlDeviceExtractor(base.DeviceExtractor):
-    device_examples: typing.ClassVar[list[dict[str, str]]] = [
-        {
-            "input": "How secure is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83.",
-            "output": "SELECT identifier FROM devices WHERE name LIKE '%iPhone 13 Pro%'",
-        },
-        {
-            "input": "How secure is my device with model Apple device with model A2483.",
-            "output": "SELECT identifier FROM devices WHERE models LIKE '%A2483%'",
-        },
-        {
-            "input": "Should I buy new phone if I have iphone14,2.",
-            "output": "SELECT identifier FROM devices WHERE identifier LIKE '%iphone14,2%'",
-        },
-        {
-            "input": "Is iPhone 6 and iphone7,2 the same device?",
-            "output": "SELECT identifier FROM devices WHERE identifier LIKE '%iphone7,2%' AND name LIKE '%iPhone 6%'",
-        },
-        {
-            "input": "How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?",
-            "output": "SELECT identifier FROM devices WHERE name LIKE '%iPhone XS%'",
-        },
-    ]
-    few_shot_prompt = FewShotChatMessagePromptTemplate(
-        example_prompt=example_prompt,
-        examples=device_examples,
+    examples = (
+        "Input Example: How secure is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83.\n"
+        "Output Example: SELECT identifier FROM devices WHERE name LIKE '%iPhone 13 Pro%'\n\n",
+        "Input Example: How secure is my device with model Apple device with model A2483.\n"
+        "Output Example: SELECT identifier FROM devices WHERE models LIKE '%A2483%'\n\n",
+        "Input Example: Should I buy new phone if I have iphone14,2.\n"
+        "Output Example: SELECT identifier FROM devices WHERE identifier LIKE '%iphone14,2%'\n\n",
+        "Input Example: Is iPhone 6 and iphone7,2 the same device?\n"
+        "Output Example: SELECT identifier FROM devices WHERE identifier LIKE '%iphone7,2%' AND name LIKE '%iPhone 6%'\n\n",
+        "Input Example: How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?\n"
+        "Output Example: SELECT identifier FROM devices WHERE name LIKE '%iPhone XS%'\n\n",
     )
     query_prompt_template = ChatPromptTemplate.from_messages(
         [
@@ -157,9 +111,10 @@ class SqlDeviceExtractor(base.DeviceExtractor):
                 "6. Make sure values you are filtering by resemble the values in the schema."
                 "\n\n"
                 "The schema of the `devices` table is as follows:\n"
-                "{table_info}\n",
+                "{table_info}\n\n"
+                "Examples:\n"
+                "{examples}",
             ),
-            few_shot_prompt,
             ("user", "Question: {input}"),
         ]
     )
@@ -167,6 +122,12 @@ class SqlDeviceExtractor(base.DeviceExtractor):
     def __init__(self, model: BaseChatModel, db: core.DatabaseService) -> None:
         self.model = model
         self.db = db
+
+        self.structured_llm: RunnableSerializable[
+            dict[str, typing.Any], dto.QueryOutput
+        ] = self.query_prompt_template | self.model.with_structured_output(
+            dto.QueryOutput
+        )  # type: ignore
 
     def extract_device_identifier(self, text: str) -> str:
         query_output = self.create_extraction_query(text)
@@ -178,16 +139,14 @@ class SqlDeviceExtractor(base.DeviceExtractor):
     def create_extraction_query(self, question: str) -> dto.QueryOutput:
         devices_table_info = self.db.get_table_info(["devices"])
 
-        prompt = self.query_prompt_template.invoke(
+        result: dto.QueryOutput = self.structured_llm.invoke(
             {
                 "dialect": self.db.dialect,
                 "table_info": devices_table_info,
                 "input": question,
+                "examples": self.examples,
             }
         )
-
-        structured_llm = self.model.with_structured_output(dto.QueryOutput)  # type: ignore
-        result: dto.QueryOutput = structured_llm.invoke(prompt)  # type: ignore
         return result
 
     def execute_query(self, query: str) -> str:

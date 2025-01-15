@@ -1,6 +1,9 @@
 import typing
 
 import pydantic
+from langchain.schema import BaseMessage
+from langgraph.graph import add_messages  # type: ignore
+from langgraph.managed import IsLastStep, RemainingSteps  # type: ignore
 
 from common import dto as common_dto
 
@@ -35,3 +38,15 @@ class Patch(pydantic.BaseModel):
     version: str | None = pydantic.Field(
         None, description="Version of the patch in format similar to '18.1.0'"
     )
+
+
+class AgentStateSchema(typing.TypedDict):
+    messages: typing.Annotated[list[BaseMessage], add_messages]
+    device_evaluation: common_dto.EvaluationDto
+
+    is_last_step: IsLastStep
+    remaining_steps: RemainingSteps
+
+
+class QuestionState(typing.TypedDict):
+    messages: typing.Annotated[list[BaseMessage], add_messages]

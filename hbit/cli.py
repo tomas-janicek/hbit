@@ -38,8 +38,24 @@ def get_agent_evaluation(question: str) -> None:
 @cli.command(name="get_chain_evaluation")
 def get_chain_evaluation(question: str) -> None:
     db = core.DatabaseService()
-    agent_evaluator = device_security.ChainDeviceEvaluator(
+    request = requests.HTTPXRequests(utils.create_hbit_api_client())
+    client = clients.ApiHBITClient(request, settings.HBIT_API_URL)
+    device_extractor = device_extractors.StructureDeviceExtractor(
         model=models.default_model, db=db
+    )
+    patch_extractor = patch_extractors.StructurePatchExtractor(
+        model=models.default_model, db=db
+    )
+    evaluation_service = evaluations.IterativeEvaluationService(client)
+    summary_service = summaries.AiSummaryService(
+        summary_model=models.smaller_model, analysis_model=models.default_model
+    )
+    agent_evaluator = device_security.ChainDeviceEvaluator(
+        model=models.default_model,
+        summary_service=summary_service,
+        device_extractor=device_extractor,
+        evaluation_service=evaluation_service,
+        patch_extractor=patch_extractor,
     )
     response = agent_evaluator.get_device_security_answer(question)
 
@@ -58,7 +74,9 @@ def get_structured_evaluation(question: str) -> None:
         model=models.default_model, db=db
     )
     evaluation_service = evaluations.IterativeEvaluationService(client)
-    summary_service = summaries.AiSummaryService(model=models.default_model)
+    summary_service = summaries.AiSummaryService(
+        summary_model=models.smaller_model, analysis_model=models.default_model
+    )
     agent_evaluator = device_security.SummarizationEvaluator(
         model=models.default_model,
         summary_service=summary_service,
@@ -83,7 +101,9 @@ def get_sql_evaluation(question: str) -> None:
         model=models.default_model, db=db
     )
     evaluation_service = evaluations.IterativeEvaluationService(client=client)
-    summary_service = summaries.AiSummaryService(model=models.default_model)
+    summary_service = summaries.AiSummaryService(
+        summary_model=models.smaller_model, analysis_model=models.default_model
+    )
     agent_evaluator = device_security.SummarizationEvaluator(
         model=models.default_model,
         summary_service=summary_service,
@@ -100,7 +120,7 @@ def get_sql_evaluation(question: str) -> None:
 def test_structured_device_extraction(text: str) -> None:
     db = core.DatabaseService()
     device_extractor = device_extractors.StructureDeviceExtractor(
-        model=models.default_model, db=db
+        model=models.code_model, db=db
     )
     identifier = device_extractor.extract_device_identifier(text)
 
@@ -111,7 +131,7 @@ def test_structured_device_extraction(text: str) -> None:
 def test_sql_device_extractor(text: str) -> None:
     db = core.DatabaseService()
     device_extractor = device_extractors.SqlDeviceExtractor(
-        model=models.default_model, db=db
+        model=models.code_model, db=db
     )
     identifier = device_extractor.extract_device_identifier(text)
 
@@ -122,7 +142,7 @@ def test_sql_device_extractor(text: str) -> None:
 def test_structured_patch_extraction(text: str) -> None:
     db = core.DatabaseService()
     patch_extractor = patch_extractors.StructurePatchExtractor(
-        model=models.default_model, db=db
+        model=models.code_model, db=db
     )
     build = patch_extractor.extract_patch_build(text)
 
@@ -132,9 +152,7 @@ def test_structured_patch_extraction(text: str) -> None:
 @cli.command(name="test_sql_patch_extractor")
 def test_sql_patch_extractor(text: str) -> None:
     db = core.DatabaseService()
-    patch_extractor = patch_extractors.SqlPatchExtractor(
-        model=models.default_model, db=db
-    )
+    patch_extractor = patch_extractors.SqlPatchExtractor(model=models.code_model, db=db)
     build = patch_extractor.extract_patch_build(text)
 
     _print_response(f"Extracted patch build: {build}")
