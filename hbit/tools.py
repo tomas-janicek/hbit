@@ -68,7 +68,7 @@ def get_device_evaluation(  # type: ignore
 
 @tool
 def get_device_identifier(
-    state: typing.Annotated[dto.QuestionState, InjectedState],
+    state: typing.Annotated[dto.QuestionStateSchema, InjectedState],
 ) -> str | None:
     """Get device identifier."""
     db = core.DatabaseService()
@@ -82,7 +82,7 @@ def get_device_identifier(
 
 @tool
 def get_patch_build(
-    state: typing.Annotated[dto.QuestionState, InjectedState],
+    state: typing.Annotated[dto.QuestionStateSchema, InjectedState],
 ) -> str | None:
     """Get patch build."""
     db = core.DatabaseService()

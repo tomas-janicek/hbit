@@ -44,5 +44,15 @@ class AgentStateSchema(typing.TypedDict):
     remaining_steps: RemainingSteps
 
 
-class QuestionState(typing.TypedDict):
+class QuestionStateSchema(typing.TypedDict):
     messages: typing.Annotated[list[BaseMessage], add_messages]
+
+
+class ChainStateSchema(typing.TypedDict):
+    messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
+
+    question: str
+    device_identifier: str
+    patch_build: str
+    device_evaluation: common_dto.EvaluationDto
+    device_summary: str

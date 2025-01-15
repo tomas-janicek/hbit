@@ -5,11 +5,9 @@ from langchain.schema import BaseMessage
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.language_models import BaseChatModel
 from langgraph.func import START  # type: ignore
-from langgraph.graph import StateGraph, add_messages  # type: ignore
+from langgraph.graph import StateGraph  # type: ignore
 from langgraph.prebuilt import create_react_agent  # type: ignore
-from typing_extensions import TypedDict
 
-from common import dto as common_dto
 from hbit import (
     core,
     dto,
@@ -18,6 +16,8 @@ from hbit import (
     summaries,
 )
 from hbit.tools import TOOLS
+
+# TODO: Create module for ML related files
 
 
 class AgentDeviceEvaluator:
@@ -45,16 +45,6 @@ class AgentDeviceEvaluator:
         return response
 
 
-class State(TypedDict):
-    messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
-
-    question: str
-    device_identifier: str
-    patch_build: str
-    device_evaluation: common_dto.EvaluationDto
-    device_summary: str
-
-
 class ChainDeviceEvaluator:
     def __init__(
         self,
@@ -71,7 +61,8 @@ class ChainDeviceEvaluator:
         self.patch_extractor = patch_extractor
         self.evaluation_service = evaluation_service
 
-        graph_builder = StateGraph(State).add_sequence(
+        # TODO: Add more sequnces to StateGraph
+        graph_builder = StateGraph(dto.ChainStateSchema).add_sequence(
             [
                 self.get_device_identifier,
                 self.get_patch_build,
@@ -97,7 +88,9 @@ class ChainDeviceEvaluator:
 
         return response
 
-    def generate_evaluation_summary(self, state: State) -> dict[str, typing.Any]:
+    def generate_evaluation_summary(
+        self, state: dto.ChainStateSchema
+    ) -> dict[str, typing.Any]:
         """Generate summary from evaluation. It is strongly recommended to use this tool as last
         if evaluation was retrieved."""
         summary = self.summary_service.generate_summary(
@@ -105,7 +98,9 @@ class ChainDeviceEvaluator:
         )
         return {"device_summary": summary}
 
-    def get_device_evaluation(self, state: State) -> dict[str, typing.Any]:
+    def get_device_evaluation(
+        self, state: dto.ChainStateSchema
+    ) -> dict[str, typing.Any]:
         """Get the evaluation of a device."""
         evaluation = self.evaluation_service.get_trimmed_evaluation(
             device_identifier=state["device_identifier"],
@@ -113,14 +108,16 @@ class ChainDeviceEvaluator:
         )
         return {"device_evaluation": evaluation}
 
-    def get_device_identifier(self, state: State) -> dict[str, typing.Any]:
+    def get_device_identifier(
+        self, state: dto.ChainStateSchema
+    ) -> dict[str, typing.Any]:
         """Get device identifier from any text. Return None if no device was found."""
         device_identifier = self.device_extractor.extract_device_identifier(
             text=state["question"]
         )
         return {"device_identifier": device_identifier}
 
-    def get_patch_build(self, state: State) -> dict[str, typing.Any]:
+    def get_patch_build(self, state: dto.ChainStateSchema) -> dict[str, typing.Any]:
         """Get patch build from any text. Return None if no patch was found."""
         patch_build = self.patch_extractor.extract_patch_build(text=state["question"])
         return {"patch_build": patch_build}
