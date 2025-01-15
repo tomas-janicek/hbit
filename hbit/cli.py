@@ -100,7 +100,9 @@ def get_sql_evaluation(question: str) -> None:
     patch_extractor = patch_extractors.SqlPatchExtractor(
         model=models.default_model, db=db
     )
-    evaluation_service = evaluations.IterativeEvaluationService(client=client)
+    evaluation_service = evaluations.AiEvaluationService(
+        client=client, model=models.code_model
+    )
     summary_service = summaries.AiSummaryService(
         summary_model=models.smaller_model, analysis_model=models.default_model
     )

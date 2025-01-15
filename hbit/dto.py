@@ -14,10 +14,6 @@ class QueryOutput(pydantic.BaseModel):
     query: typing.Annotated[str, ..., "Syntactically valid SQL query."]
 
 
-class VulnerabilitiesDto(pydantic.BaseModel):
-    vulnerabilities: list[common_dto.VulnerabilityDto]
-
-
 class Device(pydantic.BaseModel):
     identifier: str | None = pydantic.Field(
         description="Unique identifier of the device in format similar to 'iphone14,2'"

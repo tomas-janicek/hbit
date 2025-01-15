@@ -1,10 +1,13 @@
+import logging
 import typing
 
-import pydantic
 from langchain_core.language_models import BaseChatModel
+from langchain_core.runnables import Runnable
 
 from common import dto as common_dto
-from hbit import clients, dto, settings
+from hbit import clients, settings
+
+_log = logging.getLogger(__name__)
 
 
 class EvaluationService(typing.Protocol):
@@ -23,12 +26,14 @@ class AiEvaluationService(EvaluationService):
         model: BaseChatModel,
         client: clients.HBITClient,
         n_vulnerabilities: int = settings.N_VULNERABILITIES,
+        n_max_tokens: int = settings.N_TOKEN_GENERATION_LIMIT,
     ) -> None:
-        self.vulnerability_summarizer = model.with_structured_output(
-            dto.VulnerabilitiesDto
-        )
+        self.vulnerability_summarizer: Runnable[str, common_dto.VulnerabilityDto] = (
+            model.with_structured_output(common_dto.VulnerabilityDto)
+        )  # type: ignore
         self.client = client
         self.n_vulnerabilities = n_vulnerabilities
+        self.n_max_tokens = n_max_tokens
 
     def get_full_evaluation(
         self, device_identifier: str, patch_build: str
@@ -39,27 +44,36 @@ class AiEvaluationService(EvaluationService):
         self, device_identifier: str, patch_build: str
     ) -> common_dto.EvaluationDto:
         evaluation = self.get_full_evaluation(device_identifier, patch_build)
+        evaluation.vulnerabilities.sort(key=lambda v: v.score, reverse=True)
+        evaluation.vulnerabilities = evaluation.vulnerabilities[
+            : self.n_vulnerabilities
+        ]
 
-        # TODO: First, pick x vuls and create AI summaries for them. Make sure they have max pre-defined number of tokens.
-        # TODO: If one vulnerability can be bigger than context,trim data inside vulnerability.
-        # TODO: Then use this summaries to create one big summary.
+        trimmed_vulnerabilities: list[common_dto.VulnerabilityDto] = []
+        for vul in evaluation.vulnerabilities:
+            if vul.n_json_tokens > self.n_max_tokens:
+                _log.warning(
+                    "Vulnerability with ID %s can't be summarized because it is too big (it has %s tokens).",
+                    vul.cve_id,
+                    vul.n_json_tokens,
+                )
+                continue
+            prompt = (
+                "You are a cyber-security expert tasked with analyzing a vulnerability data provided in JSON format. "
+                "Your goal is to identify and return only the most critical parts of given vulnerability. "
+                "Focus on parts that, if exploited, could cause significant problems for the user. Ensure the JSON structure "
+                "of the vulnerability remains unchanged. If any field within a vulnerability contains a list of items, you can also "
+                "remove less important items from those lists, while retaining only the most critical information. "
+                "Remove or exclude less important vulnerabilities and details while maintaining the overall format.\n\n"
+                "Here is the vulnerability:\n\n"
+                f"{vul.model_dump_json()}"
+            )
+            trimmed_vul: common_dto.VulnerabilityDto = (
+                self.vulnerability_summarizer.invoke(prompt)
+            )
+            trimmed_vulnerabilities.append(trimmed_vul)
 
-        vuls_type_adapter = pydantic.TypeAdapter(list[common_dto.VulnerabilityDto])
-        vuls_str = vuls_type_adapter.dump_json(evaluation.vulnerabilities)
-        prompt = (
-            "You are a cyber-security expert tasked with analyzing a list of vulnerabilities provided in JSON format. "
-            f"Your goal is to identify and return only the {self.n_vulnerabilities} most critical vulnerabilities. "
-            "Focus on vulnerabilities that, if exploited, could cause significant problems for the user. Ensure the JSON structure "
-            "of the vulnerabilities remains unchanged. If any field within a vulnerability contains a list of items, you can also "
-            "remove less important items from those lists, while retaining only the most critical information. "
-            "Remove or exclude less important vulnerabilities and details while maintaining the overall format.\n\n"
-            "Here is the list of vulnerabilities:\n\n"
-            f"{vuls_str.decode('utf-8')}"
-        )
-        trimmed_vulnerabilities: dto.VulnerabilitiesDto = (
-            self.vulnerability_summarizer.invoke(prompt)
-        )  # type: ignore
-        evaluation.vulnerabilities = trimmed_vulnerabilities.vulnerabilities
+        evaluation.vulnerabilities = trimmed_vulnerabilities
         return evaluation
 
 
@@ -81,10 +95,13 @@ class IterativeEvaluationService(EvaluationService):
         self, device_identifier: str, patch_build: str
     ) -> common_dto.EvaluationDto:
         evaluation = self.get_full_evaluation(device_identifier, patch_build)
-        vulnerabilities = self._trim_vulnerabilities(evaluation.vulnerabilities)
-        vulnerabilities.sort(key=lambda v: v.score, reverse=True)
-        vulnerabilities = vulnerabilities[: self.n_vulnerabilities]
-        evaluation.vulnerabilities = vulnerabilities
+        evaluation.vulnerabilities.sort(key=lambda v: v.score, reverse=True)
+        evaluation.vulnerabilities = evaluation.vulnerabilities[
+            : self.n_vulnerabilities
+        ]
+        evaluation.vulnerabilities = self._trim_vulnerabilities(
+            evaluation.vulnerabilities
+        )
         return evaluation
 
     def _trim_vulnerabilities(
