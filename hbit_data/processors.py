@@ -25,7 +25,6 @@ class ItemProcessor(typing.Generic[ItemT]):
         self.end_processing()
 
     def process_batch(self, items: list[ItemT]) -> None:
-        # TODO: Can we make this async / threaded?
         for pipeline in self.pipelines:
             pipeline.process_batch(items)
 

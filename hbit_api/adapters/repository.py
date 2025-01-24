@@ -137,7 +137,6 @@ class SqlUserRepository(UserRepository):
 
     def delete(self, user: models.User) -> None:
         self.session.delete(user)
-        # TODO: Does this sill work even if I delete user?
         self.seen_tracker.add(user)
 
     def get_seen(self) -> typing.Collection[models.User]:

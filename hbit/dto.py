@@ -7,6 +7,10 @@ from langgraph.managed import IsLastStep, RemainingSteps  # type: ignore
 
 from common import dto as common_dto
 
+######################
+# Structured Outputs #
+######################
+
 
 class QueryOutput(pydantic.BaseModel):
     """Generated SQL query."""
@@ -36,8 +40,13 @@ class Patch(pydantic.BaseModel):
     )
 
 
+#################
+# State Schemas #
+#################
+
+
 class AgentStateSchema(typing.TypedDict):
-    messages: typing.Annotated[list[BaseMessage], add_messages]
+    messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
     device_evaluation: common_dto.EvaluationDto
 
     is_last_step: IsLastStep
@@ -45,7 +54,7 @@ class AgentStateSchema(typing.TypedDict):
 
 
 class QuestionStateSchema(typing.TypedDict):
-    messages: typing.Annotated[list[BaseMessage], add_messages]
+    messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
 
 
 class ChainStateSchema(typing.TypedDict):

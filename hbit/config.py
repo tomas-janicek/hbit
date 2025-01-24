@@ -10,8 +10,10 @@ class Settings(BaseSettings):
         env_file=".env", env_ignore_empty=True, extra="ignore"
     )
 
+    ROOT_DIT: Path = Path(__file__).parent.parent
     BASE_DIR: Path = Path(__file__).parent
     DATA_DIR: Path = BASE_DIR / "data"
+    STATIC_DIR: Path = ROOT_DIT / "static"
 
     HBIT_API_URL: str
     DEFAULT_TIMEOUT: int = 10

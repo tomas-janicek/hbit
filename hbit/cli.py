@@ -1,35 +1,20 @@
 import typer
-from langchain_core.rate_limiters import InMemoryRateLimiter
 
-from common import requests
-from hbit import (
-    clients,
-    core,
-    device_security,
-    evaluations,
-    models,
-    settings,
-    summaries,
-    utils,
-)
+from hbit import bootstrap, core, endpoints, enums, models, settings
 from hbit.extractors import device_extractors, patch_extractors
 
 cli = typer.Typer()
 
-model_name = "llama3-70b-8192"
-rate_limiter = InMemoryRateLimiter(
-    requests_per_second=0.075,  # one request in 4 seconds
-    check_every_n_seconds=0.5,
-    max_bucket_size=1,
-)
-
 
 @cli.command(name="get_agent_evaluation")
 def get_agent_evaluation(question: str) -> None:
-    db = core.DatabaseService()
-    agent_evaluator = device_security.AgentDeviceEvaluator(
-        model=models.default_model, db=db
+    registry = bootstrap.create_services(
+        device_extractor_type=enums.DeviceExtractorType.SQL_EXTRACTOR,
+        patch_extractor_type=enums.PatchExtractorType.SQL_EXTRACTOR,
+        evaluation_service_type=enums.EvaluationServiceType.AI,
+        summary_service_type=enums.SummaryServiceType.AI,
     )
+    agent_evaluator = endpoints.AgentDeviceEvaluator(registry=registry)
     response = agent_evaluator.get_device_security_answer(question)
 
     _print_response(response)
@@ -37,53 +22,27 @@ def get_agent_evaluation(question: str) -> None:
 
 @cli.command(name="get_chain_evaluation")
 def get_chain_evaluation(question: str) -> None:
-    db = core.DatabaseService()
-    request = requests.HTTPXRequests(utils.create_hbit_api_client())
-    client = clients.ApiHBITClient(request, settings.HBIT_API_URL)
-    device_extractor = device_extractors.StructureDeviceExtractor(
-        model=models.default_model, db=db
+    registry = bootstrap.create_services(
+        device_extractor_type=enums.DeviceExtractorType.STRUCTURED_EXTRACTOR,
+        patch_extractor_type=enums.PatchExtractorType.STRUCTURED_EXTRACTOR,
+        evaluation_service_type=enums.EvaluationServiceType.IMPERATIVE,
+        summary_service_type=enums.SummaryServiceType.AI,
     )
-    patch_extractor = patch_extractors.StructurePatchExtractor(
-        model=models.default_model, db=db
-    )
-    evaluation_service = evaluations.IterativeEvaluationService(client)
-    summary_service = summaries.AiSummaryService(
-        summary_model=models.smaller_model, analysis_model=models.default_model
-    )
-    agent_evaluator = device_security.ChainDeviceEvaluator(
-        model=models.default_model,
-        summary_service=summary_service,
-        device_extractor=device_extractor,
-        evaluation_service=evaluation_service,
-        patch_extractor=patch_extractor,
-    )
-    response = agent_evaluator.get_device_security_answer(question)
+    chain_evaluator = endpoints.ChainDeviceEvaluator(registry=registry)
+    response = chain_evaluator.get_device_security_answer(question)
 
     _print_response(response)
 
 
 @cli.command(name="get_structured_evaluation")
 def get_structured_evaluation(question: str) -> None:
-    db = core.DatabaseService()
-    request = requests.HTTPXRequests(utils.create_hbit_api_client())
-    client = clients.ApiHBITClient(request, settings.HBIT_API_URL)
-    device_extractor = device_extractors.StructureDeviceExtractor(
-        model=models.default_model, db=db
+    registry = bootstrap.create_services(
+        device_extractor_type=enums.DeviceExtractorType.STRUCTURED_EXTRACTOR,
+        patch_extractor_type=enums.PatchExtractorType.STRUCTURED_EXTRACTOR,
+        evaluation_service_type=enums.EvaluationServiceType.IMPERATIVE,
+        summary_service_type=enums.SummaryServiceType.AI,
     )
-    patch_extractor = patch_extractors.StructurePatchExtractor(
-        model=models.default_model, db=db
-    )
-    evaluation_service = evaluations.IterativeEvaluationService(client)
-    summary_service = summaries.AiSummaryService(
-        summary_model=models.smaller_model, analysis_model=models.default_model
-    )
-    agent_evaluator = device_security.SummarizationEvaluator(
-        model=models.default_model,
-        summary_service=summary_service,
-        device_extractor=device_extractor,
-        evaluation_service=evaluation_service,
-        patch_extractor=patch_extractor,
-    )
+    agent_evaluator = endpoints.ImperativeEvaluator(registry=registry)
     response = agent_evaluator.get_device_security_answer(question)
 
     _print_response(response)
@@ -91,31 +50,19 @@ def get_structured_evaluation(question: str) -> None:
 
 @cli.command(name="get_sql_evaluation")
 def get_sql_evaluation(question: str) -> None:
-    db = core.DatabaseService()
-    request = requests.HTTPXRequests(utils.create_hbit_api_client())
-    client = clients.ApiHBITClient(request, settings.HBIT_API_URL)
-    device_extractor = device_extractors.SqlDeviceExtractor(
-        model=models.default_model, db=db
+    registry = bootstrap.create_services(
+        device_extractor_type=enums.DeviceExtractorType.SQL_EXTRACTOR,
+        patch_extractor_type=enums.PatchExtractorType.SQL_EXTRACTOR,
+        evaluation_service_type=enums.EvaluationServiceType.AI,
+        summary_service_type=enums.SummaryServiceType.AI,
     )
-    patch_extractor = patch_extractors.SqlPatchExtractor(
-        model=models.default_model, db=db
-    )
-    evaluation_service = evaluations.AiEvaluationService(
-        client=client, model=models.code_model
-    )
-    summary_service = summaries.AiSummaryService(
-        summary_model=models.smaller_model, analysis_model=models.default_model
-    )
-    agent_evaluator = device_security.SummarizationEvaluator(
-        model=models.default_model,
-        summary_service=summary_service,
-        device_extractor=device_extractor,
-        patch_extractor=patch_extractor,
-        evaluation_service=evaluation_service,
-    )
+    agent_evaluator = endpoints.ImperativeEvaluator(registry=registry)
     response = agent_evaluator.get_device_security_answer(question)
 
     _print_response(response)
+
+
+# TODO: Create notebook for this tests
 
 
 @cli.command(name="test_device_extraction")
@@ -158,6 +105,18 @@ def test_sql_patch_extractor(text: str) -> None:
     build = patch_extractor.extract_patch_build(text)
 
     _print_response(f"Extracted patch build: {build}")
+
+
+@cli.command(name="save_graph_photos")
+def save_graph_photos() -> None:
+    registry = bootstrap.create_services(
+        device_extractor_type=enums.DeviceExtractorType.SQL_EXTRACTOR,
+        patch_extractor_type=enums.PatchExtractorType.SQL_EXTRACTOR,
+        evaluation_service_type=enums.EvaluationServiceType.AI,
+        summary_service_type=enums.SummaryServiceType.AI,
+    )
+    agent_evaluator = endpoints.ChainDeviceEvaluator(registry=registry)
+    agent_evaluator.save_graph_image(settings.STATIC_DIR / "chain-graph.png")
 
 
 def _print_response(response: str) -> None:
