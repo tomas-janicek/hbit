@@ -15,4 +15,5 @@
     "python.envFile": "${workspaceFolder}/.env",
     "debugpy.debugJustMyCode": false,
     "python.testing.unittestEnabled": false,
+    "jupyter.notebookFileRoot": "${workspaceFolder}",
 }

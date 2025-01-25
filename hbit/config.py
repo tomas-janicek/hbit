@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     LANGCHAIN_API_KEY: str
     GROQ_API_KEY: str
     MODEL_SEED: int = 0
+    REQUESTS_PER_SECOND: float = 0.05
 
     N_VULNERABILITIES: int = 10
     N_TOKEN_GENERATION_LIMIT: int = 15_000

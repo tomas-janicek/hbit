@@ -8,7 +8,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import RunnableSerializable
 from sqlalchemy import text as _text
 
-from hbit import core, dto
+from hbit import core, dto, utils
 
 from . import base
 
@@ -27,6 +27,10 @@ class StructureDeviceExtractor(base.DeviceExtractor):
         f"Output Example: {{{dto.Device(identifier='iphone7,2', name='iPhone 6', manufacturer=None, model=None).model_dump_json()}}}\n\n"
         "Input Example: 'How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?'\n"
         f"Output Example: {{{dto.Device(identifier=None, name='iPhone XS', manufacturer=None, model=None).model_dump_json()}}}\n\n"
+        "Input Example: 'Which version is my iPhone running if the patch is labeled with build 24D12?'\n"
+        f"Output Example: {{{dto.Device(identifier=None, name=None, manufacturer=None, model=None).model_dump_json()}}}\n\n"
+        "Input Example: 'Can you tell me the version number for the patch identified by build 23C45?'\n"
+        f"Output Example: {{{dto.Device(identifier=None, name=None, manufacturer=None, model=None).model_dump_json()}}}\n\n"
     )
 
     prompt_template = ChatPromptTemplate.from_messages(
@@ -56,6 +60,9 @@ class StructureDeviceExtractor(base.DeviceExtractor):
     def extract_device_identifier(self, text: str) -> str | None:
         device = self.extract_device_info(text)
         _log.debug(f"Extracted device: {device}")
+        if utils.are_all_fields_none(device):
+            return None
+
         with self.db.connect() as connection:
             raw_sql = (
                 "SELECT devices.identifier "
@@ -86,15 +93,19 @@ class StructureDeviceExtractor(base.DeviceExtractor):
 class SqlDeviceExtractor(base.DeviceExtractor):
     examples = (
         "Input Example: How secure is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83.\n"
-        "Output Example: SELECT identifier FROM devices WHERE name LIKE '%iPhone 13 Pro%'\n\n",
+        "Output Example: SELECT identifier FROM devices WHERE name LIKE '%iPhone 13 Pro%'\n\n"
         "Input Example: How secure is my device with model Apple device with model A2483.\n"
-        "Output Example: SELECT identifier FROM devices WHERE models LIKE '%A2483%'\n\n",
+        "Output Example: SELECT identifier FROM devices WHERE models LIKE '%A2483%'\n\n"
         "Input Example: Should I buy new phone if I have iphone14,2.\n"
-        "Output Example: SELECT identifier FROM devices WHERE identifier LIKE '%iphone14,2%'\n\n",
+        "Output Example: SELECT identifier FROM devices WHERE identifier LIKE '%iphone14,2%'\n\n"
         "Input Example: Is iPhone 6 and iphone7,2 the same device?\n"
-        "Output Example: SELECT identifier FROM devices WHERE identifier LIKE '%iphone7,2%' AND name LIKE '%iPhone 6%'\n\n",
+        "Output Example: SELECT identifier FROM devices WHERE identifier LIKE '%iphone7,2%' AND name LIKE '%iPhone 6%'\n\n"
         "Input Example: How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?\n"
-        "Output Example: SELECT identifier FROM devices WHERE name LIKE '%iPhone XS%'\n\n",
+        "Output Example: SELECT identifier FROM devices WHERE name LIKE '%iPhone XS%'\n\n"
+        "Input Example: Which version is my iPhone running if the patch is labeled with build 24D12?\n"
+        "Output Example: \n\n"
+        "Input Example: Can you tell me the version number for the patch identified by build 23C45?\n"
+        "Output Example: \n\n"
     )
     query_prompt_template = ChatPromptTemplate.from_messages(
         [
@@ -102,6 +113,7 @@ class SqlDeviceExtractor(base.DeviceExtractor):
                 "system",
                 "Your task is to generate a syntactically correct {dialect} query based on the given input question. "
                 "The purpose of the query is to extract the `identifier` column from the `devices` table. "
+                "If there is no mention of any device, return empty string instead of SQL query.\n"
                 "Follow these guidelines:\n"
                 "1. Only filter by values explicitly mentioned in the input question that are relevant to the device.\n"
                 "2. Avoid querying columns that are not part of the schema or values do not resamble values in rows.\n"
@@ -129,9 +141,11 @@ class SqlDeviceExtractor(base.DeviceExtractor):
             dto.QueryOutput
         )  # type: ignore
 
-    def extract_device_identifier(self, text: str) -> str:
+    def extract_device_identifier(self, text: str) -> str | None:
         query_output = self.create_extraction_query(text)
         _log.debug(f"Query: {query_output.query}")
+        if not query_output.query:
+            return None
 
         response = self.execute_query(query_output.query)
         return response

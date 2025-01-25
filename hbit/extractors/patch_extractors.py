@@ -8,7 +8,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import RunnableSerializable
 from sqlalchemy import text as _text
 
-from hbit import core, dto
+from hbit import core, dto, utils
 
 from . import base
 
@@ -23,6 +23,12 @@ class StructurePatchExtractor(base.PatchExtractor):
         f"Output Example: {{{dto.Patch(build=None, version='17.7.2').model_dump_json()}}}\n\n"
         "Input Example: 'What version does my patch with build 22B83 have?'\n"
         f"Output Example: {{{dto.Patch(build='22B83', version=None).model_dump_json()}}}\n\n"
+        "Input Example: How secure is an iPhone XS running iOS 17.0.2? Are there any known vulnerabilities or security concerns with this version?\n"
+        f"Output Example: {{{dto.Patch(build=None, version='17.0.2').model_dump_json()}}}\n\n"
+        "Input Example: What's the latest iOS patch for iPhone 14?\n"
+        f"Output Example: {{{dto.Patch(build=None, version=None).model_dump_json()}}}\n\n"
+        "Input Example: Is my iPhone 14 Pro on iOS 16.3 safe from known vulnerabilities?\n"
+        f"Output Example: {{{dto.Patch(build=None, version='16.3').model_dump_json()}}}\n\n"
     )
 
     prompt_template = ChatPromptTemplate.from_messages(
@@ -50,6 +56,9 @@ class StructurePatchExtractor(base.PatchExtractor):
     def extract_patch_build(self, text: str) -> str | None:
         patch = self.extract_patch_info(text)
         _log.debug(f"Extracted patch: {patch}")
+        if utils.are_all_fields_none(patch):
+            return None
+
         with self.db.connect() as connection:
             raw_sql = (
                 "SELECT patches.build "
@@ -61,7 +70,7 @@ class StructurePatchExtractor(base.PatchExtractor):
                 _text(raw_sql),
                 parameters={
                     "build": patch.build,
-                    "version": patch.version,
+                    "version": f"%{patch.version}%" if patch.version else None,
                 },
             )
         return result
@@ -74,13 +83,17 @@ class StructurePatchExtractor(base.PatchExtractor):
 class SqlPatchExtractor(base.PatchExtractor):
     examples = (
         "Input Example: How secure is my iPhone 13 Pro patch if I have patch 18.0.1 installed identified by build 22B83.\n"
-        "Output Example: SELECT build FROM patches WHERE build LIKE '22B83' AND version LIKE '18.0.1'\n\n"
+        "Output Example: SELECT build FROM patches WHERE build LIKE '22B83' AND version LIKE '%18.0.1%'\n\n"
         "Input Example: The latest patch for my device is 17.7.2.\n"
-        "Output Example: SELECT build FROM patches WHERE version LIKE '17.7.2'\n\n"
+        "Output Example: SELECT build FROM patches WHERE version LIKE '%17.7.2%'\n\n"
         "Input Example: What version does my patch with build 22B83 have?\n"
         "Output Example: SELECT build FROM patches WHERE build LIKE '22B83'\n\n"
         "Input Example: How secure is an iPhone XS running iOS 17.0.2? Are there any known vulnerabilities or security concerns with this version?\n"
-        "Output Example: SELECT build FROM patches WHERE version LIKE '17.0.2'\n\n"
+        "Output Example: SELECT build FROM patches WHERE version LIKE '%17.0.2%'\n\n"
+        "Input Example: What's the latest iOS patch for iPhone 14?\n"
+        "Output Example: \n\n"
+        "Input Example: Is my iPhone 14 Pro on iOS 16.3 safe from known vulnerabilities?\n"
+        "Output Example: SELECT build FROM patches WHERE version LIKE '%16.3%'\n\n"
     )
 
     query_prompt_template = ChatPromptTemplate.from_messages(
@@ -88,13 +101,15 @@ class SqlPatchExtractor(base.PatchExtractor):
             (
                 "system",
                 "Your task is to generate a syntactically correct {dialect} query based on the given input question. "
-                "The purpose of the query is to extract the `build` column from the `patches` table. "
+                "The purpose of the query is to extract the `build` column from the `patches` table. If there is no "
+                "mention of any patch, return empty string instead of SQL query.\n"
                 "Follow these guidelines:\n"
                 "1. Only filter by values explicitly mentioned in the input question that are relevant to the patch.\n"
                 "2. Avoid querying columns that are not part of the schema or using incorrect example values.\n"
                 "3. Prioritize using unique columns that can independently identify a patch.\n"
                 "4. Use `LIKE` for string matching to ensure case-insensitive filtering.\n"
-                "5. Completely ignore JSON fields.\n\n"
+                "5. Completely ignore JSON fields.\n"
+                "6. Return empty string when there is not data about patch in input.\n\n"
                 "The schema of the `patches` table is as follows:\n"
                 "{table_info}\n"
                 "Examples:"
@@ -114,10 +129,12 @@ class SqlPatchExtractor(base.PatchExtractor):
             dto.QueryOutput
         )  # type: ignore
 
-    def extract_patch_build(self, text: str) -> str:
+    def extract_patch_build(self, text: str) -> str | None:
         query_output = self.create_extraction_query(text)
-        _log.debug(f"Query: {query_output.query}")
+        if not query_output.query:
+            return None
 
+        _log.debug(f"Query: {query_output.query}")
         response = self.execute_query(query_output.query)
         return response
 

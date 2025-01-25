@@ -23,10 +23,12 @@ class ServicesFactory:
     def __init__(self):
         self.registry = services.ServiceContainer()
 
-    def add_models(self) -> typing.Self:
+    def add_models(
+        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
+    ) -> typing.Self:
         rate_limiter = InMemoryRateLimiter(
-            requests_per_second=0.05,
-            check_every_n_seconds=0.5,
+            requests_per_second=requests_per_second,
+            check_every_n_seconds=requests_per_second * 10,
             max_bucket_size=1,
         )
 

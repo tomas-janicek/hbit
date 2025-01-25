@@ -1,7 +1,6 @@
 import typer
 
-from hbit import bootstrap, core, endpoints, enums, models, settings
-from hbit.extractors import device_extractors, patch_extractors
+from hbit import bootstrap, endpoints, enums, settings
 
 cli = typer.Typer()
 
@@ -60,51 +59,6 @@ def get_sql_evaluation(question: str) -> None:
     response = agent_evaluator.get_device_security_answer(question)
 
     _print_response(response)
-
-
-# TODO: Create notebook for this tests
-
-
-@cli.command(name="test_device_extraction")
-def test_structured_device_extraction(text: str) -> None:
-    db = core.DatabaseService()
-    device_extractor = device_extractors.StructureDeviceExtractor(
-        model=models.code_model, db=db
-    )
-    identifier = device_extractor.extract_device_identifier(text)
-
-    _print_response(f"Extracted device identifier: {identifier}")
-
-
-@cli.command(name="test_sql_device_extractor")
-def test_sql_device_extractor(text: str) -> None:
-    db = core.DatabaseService()
-    device_extractor = device_extractors.SqlDeviceExtractor(
-        model=models.code_model, db=db
-    )
-    identifier = device_extractor.extract_device_identifier(text)
-
-    _print_response(f"Extracted device identifier: {identifier}")
-
-
-@cli.command(name="test_patch_extraction")
-def test_structured_patch_extraction(text: str) -> None:
-    db = core.DatabaseService()
-    patch_extractor = patch_extractors.StructurePatchExtractor(
-        model=models.code_model, db=db
-    )
-    build = patch_extractor.extract_patch_build(text)
-
-    _print_response(f"Extracted patch build: {build}")
-
-
-@cli.command(name="test_sql_patch_extractor")
-def test_sql_patch_extractor(text: str) -> None:
-    db = core.DatabaseService()
-    patch_extractor = patch_extractors.SqlPatchExtractor(model=models.code_model, db=db)
-    build = patch_extractor.extract_patch_build(text)
-
-    _print_response(f"Extracted patch build: {build}")
 
 
 @cli.command(name="save_graph_photos")

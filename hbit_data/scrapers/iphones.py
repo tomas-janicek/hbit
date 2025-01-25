@@ -48,6 +48,8 @@ class iPhoneScraper(base.Scraper[dto.Device]):
         type = device.get("type", "").lower()
         if type != "iphone":
             return False
+        if "(" in device.get("name", ""):
+            return False
 
         return True
 
