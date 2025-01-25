@@ -4,13 +4,14 @@ import typing
 from langgraph.func import START  # type: ignore
 from langgraph.graph import StateGraph  # type: ignore
 
-from hbit import dto, evaluations, extractors, services, summaries
+from hbit import dto, evaluations, extractors, services, summaries, types
 
 
 class ChainDeviceEvaluator:
     def __init__(self, registry: services.ServiceContainer) -> None:
         self.registry = registry
 
+        saver = self.registry.get_service(types.MemorySaver)
         # TODO: Add more sequnces to StateGraph
         graph_builder = StateGraph(dto.ChainStateSchema).add_sequence(
             [
@@ -21,7 +22,7 @@ class ChainDeviceEvaluator:
             ]
         )
         graph_builder.add_edge(START, "get_device_identifier")
-        self.graph = graph_builder.compile()
+        self.graph = graph_builder.compile(checkpointer=saver)
 
     def get_device_security_answer(self, question: str) -> str:
         response = "Nothing was generated!"

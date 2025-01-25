@@ -107,4 +107,5 @@ def _get_registry_from_config(config: RunnableConfig) -> services.ServiceContain
         raise RuntimeError(
             "Error in tool / model configuration. Registry must be part of RunnableConfig!"
         )
+
     return registry
