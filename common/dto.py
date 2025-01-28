@@ -236,7 +236,7 @@ class VulnerabilityDto(BaseModel):
         return "\n".join(part for part in parts if part)
 
 
-class PatchEvaluationDto(BaseModel):
+class PatchDto(BaseModel):
     build: str
     os: str
     name: str
@@ -293,9 +293,9 @@ class DeviceDto(BaseModel):
         return "\n".join(part for part in parts if part)
 
 
-class EvaluationDto(BaseModel):
+class DeviceEvaluationDto(BaseModel):
     device: DeviceDto
-    patch: PatchEvaluationDto
+    patch: PatchDto
     vulnerabilities: list[VulnerabilityDto] = []
 
     @classmethod
@@ -304,7 +304,7 @@ class EvaluationDto(BaseModel):
     ) -> typing.Self:
         return cls(
             device=DeviceDto.from_device(device),
-            patch=PatchEvaluationDto.from_patch(patch),
+            patch=PatchDto.from_patch(patch),
             # include only cves with high score
             vulnerabilities=[
                 VulnerabilityDto.from_cve(cve)
@@ -330,7 +330,7 @@ class EvaluationDto(BaseModel):
 
     def get_chunked_by_n_tokens(
         self, n_max_tokens: int
-    ) -> typing.Iterator["EvaluationDto"]:
+    ) -> typing.Iterator["DeviceEvaluationDto"]:
         n_prepared_tokens = 0
         chunked_vuls: list[VulnerabilityDto] = []
         for vul in self.vulnerabilities:
@@ -341,8 +341,61 @@ class EvaluationDto(BaseModel):
                     vul.n_json_tokens,
                 )
             elif n_prepared_tokens + vul.n_json_tokens > n_max_tokens:
-                yield EvaluationDto(
+                yield DeviceEvaluationDto(
                     device=self.device,
+                    patch=self.patch,
+                    vulnerabilities=chunked_vuls,
+                )
+                n_prepared_tokens = vul.n_json_tokens
+                chunked_vuls = [vul]
+            else:
+                n_prepared_tokens += vul.n_json_tokens
+                chunked_vuls.append(vul)
+
+
+class PatchEvaluationDto(BaseModel):
+    patch: PatchDto
+    vulnerabilities: list[VulnerabilityDto] = []
+
+    @classmethod
+    def from_patch(cls, patch: "models.Patch") -> typing.Self:
+        return cls(
+            patch=PatchDto.from_patch(patch),
+            # include only cves with high score
+            vulnerabilities=[
+                VulnerabilityDto.from_cve(cve)
+                for cve in patch.cves
+                if cve.cvss["score"] > 7.0
+            ],
+        )
+
+    def to_readable_str(self) -> str:
+        patch_str = self.patch.to_readable_str()
+        vulnerabilities_str = "\n".join(
+            [v.to_readable_str() for v in self.vulnerabilities]
+        )
+
+        parts = [
+            "# Evaluation",
+            f"{patch_str}",
+            f"## Vulnerabilities\n{vulnerabilities_str}",
+        ]
+        return "\n".join(part for part in parts if part)
+
+    def get_chunked_by_n_tokens(
+        self, n_max_tokens: int
+    ) -> typing.Iterator["PatchEvaluationDto"]:
+        n_prepared_tokens = 0
+        chunked_vuls: list[VulnerabilityDto] = []
+        for vul in self.vulnerabilities:
+            if vul.n_json_tokens > n_max_tokens:
+                _log.warning(
+                    "Vulnerability with ID %s can't be summarized because it is too big (it has %s tokens).",
+                    vul.cve_id,
+                    vul.n_json_tokens,
+                )
+            elif n_prepared_tokens + vul.n_json_tokens > n_max_tokens:
+                yield PatchEvaluationDto(
                     patch=self.patch,
                     vulnerabilities=chunked_vuls,
                 )

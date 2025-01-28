@@ -40,6 +40,14 @@ class StructurePatchExtractor(base.PatchExtractor):
                 "Make sure you only extract the values of the attributes mentioned in the question. "
                 "If you do not know the value of an attribute asked to extract, "
                 "return null for the attribute's value.\n\n"
+                "Output Format:\n"
+                "After your extraction process, provide the extracted information in JSON format. "
+                "The JSON should contain two keys: 'version' and 'build'. If a value is not found, it should be set to null."
+                "Example output structure:\n"
+                "{\n"
+                '    "version": "[extracted version or null]",\n'
+                '    "build": "[extracted build or null]"\n'
+                "}\n\n"
                 "{examples}",
             ),
             ("human", "{input}"),

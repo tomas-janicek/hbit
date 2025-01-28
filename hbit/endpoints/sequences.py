@@ -8,7 +8,9 @@ class ImperativeEvaluator:
         self.summary_service = registry.get_service(summaries.SummaryService)
         self.device_extractor = registry.get_service(extractors.DeviceExtractor)
         self.patch_extractor = registry.get_service(extractors.PatchExtractor)
-        self.evaluation_service = registry.get_service(evaluations.EvaluationService)
+        self.evaluation_service = registry.get_service(
+            evaluations.DeviceEvaluationService
+        )
 
     def get_device_security_answer(self, question: str) -> str:
         device_identifier = self.device_extractor.extract_device_identifier(question)

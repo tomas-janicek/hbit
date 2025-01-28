@@ -11,10 +11,22 @@ class PatchExtractorType(enum.Enum):
     STRUCTURED_EXTRACTOR = enum.auto()
 
 
-class EvaluationServiceType(enum.Enum):
+class DeviceEvaluationType(enum.Enum):
+    IMPERATIVE = enum.auto()
+    AI = enum.auto()
+
+
+class PatchEvaluationType(enum.Enum):
     IMPERATIVE = enum.auto()
     AI = enum.auto()
 
 
 class SummaryServiceType(enum.Enum):
     AI = enum.auto()
+
+
+class ModelProvider(enum.Enum):
+    GROQ = enum.auto()
+    OPEN_AI = enum.auto()
+    ANTHROPIC = enum.auto()
+    DEEPSEEK = enum.auto()

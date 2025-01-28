@@ -33,6 +33,7 @@ class StructureDeviceExtractor(base.DeviceExtractor):
         f"Output Example: {{{dto.Device(identifier=None, name=None, manufacturer=None, model=None).model_dump_json()}}}\n\n"
     )
 
+    # TODO: Find a way how to use specific prompt for specific model
     prompt_template = ChatPromptTemplate.from_messages(
         [
             (

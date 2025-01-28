@@ -9,7 +9,9 @@ from hbit import settings
 
 class SummaryService(typing.Protocol):
     def generate_summary(
-        self, question: str, evaluation: common_dto.EvaluationDto
+        self,
+        text: str,
+        evaluation: common_dto.DeviceEvaluationDto | common_dto.PatchEvaluationDto,
     ) -> str: ...
 
 
@@ -25,7 +27,9 @@ class AiSummaryService(SummaryService):
         self.n_max_tokens = n_max_tokens
 
     def generate_summary(
-        self, question: str, evaluation: common_dto.EvaluationDto
+        self,
+        text: str,
+        evaluation: common_dto.DeviceEvaluationDto | common_dto.PatchEvaluationDto,
     ) -> str:
         summaries: list[str] = []
         for evaluation_chunk in evaluation.get_chunked_by_n_tokens(
@@ -36,7 +40,7 @@ class AiSummaryService(SummaryService):
                 "answer the user question, create summary of given evaluation. "
                 "Bare in mind this summary will then be used with other summaries "
                 "generated similar way.\n\n"
-                f"Question: {question}\n"
+                f"Question: {text}\n"
                 f"{evaluation_chunk}"
             )
             summary: AIMessage = self.summary_model.invoke(prompt)  # type: ignore
@@ -51,7 +55,7 @@ class AiSummaryService(SummaryService):
             "You are expert cyber-security analyst."
             "Given the following user's question, and summaries for different security "
             "evaluations generate analysis to user's question.\n\n"
-            f"Question: {question}\n"
+            f"Question: {text}\n"
             f"{summaries_str}"
         )
         analysis: AIMessage = self.analysis_model.invoke(prompt)  # type: ignore

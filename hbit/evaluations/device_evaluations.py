@@ -1,5 +1,4 @@
 import logging
-import typing
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import Runnable
@@ -7,20 +6,12 @@ from langchain_core.runnables import Runnable
 from common import dto as common_dto
 from hbit import clients, settings
 
+from . import base
+
 _log = logging.getLogger(__name__)
 
 
-class EvaluationService(typing.Protocol):
-    def get_full_evaluation(
-        self, device_identifier: str, patch_build: str
-    ) -> common_dto.EvaluationDto: ...
-
-    def get_trimmed_evaluation(
-        self, device_identifier: str, patch_build: str
-    ) -> common_dto.EvaluationDto: ...
-
-
-class AiEvaluationService(EvaluationService):
+class AiDeviceEvaluationService(base.DeviceEvaluationService):
     def __init__(
         self,
         model: BaseChatModel,
@@ -37,12 +28,12 @@ class AiEvaluationService(EvaluationService):
 
     def get_full_evaluation(
         self, device_identifier: str, patch_build: str
-    ) -> common_dto.EvaluationDto:
+    ) -> common_dto.DeviceEvaluationDto:
         return self.client.get_device_evaluation(device_identifier, patch_build)
 
     def get_trimmed_evaluation(
         self, device_identifier: str, patch_build: str
-    ) -> common_dto.EvaluationDto:
+    ) -> common_dto.DeviceEvaluationDto:
         evaluation = self.get_full_evaluation(device_identifier, patch_build)
         evaluation.vulnerabilities.sort(key=lambda v: v.score, reverse=True)
         evaluation.vulnerabilities = evaluation.vulnerabilities[
@@ -77,7 +68,7 @@ class AiEvaluationService(EvaluationService):
         return evaluation
 
 
-class IterativeEvaluationService(EvaluationService):
+class IterativeEvaluationService(base.DeviceEvaluationService):
     def __init__(
         self,
         client: clients.HBITClient,
@@ -88,12 +79,12 @@ class IterativeEvaluationService(EvaluationService):
 
     def get_full_evaluation(
         self, device_identifier: str, patch_build: str
-    ) -> common_dto.EvaluationDto:
+    ) -> common_dto.DeviceEvaluationDto:
         return self.client.get_device_evaluation(device_identifier, patch_build)
 
     def get_trimmed_evaluation(
         self, device_identifier: str, patch_build: str
-    ) -> common_dto.EvaluationDto:
+    ) -> common_dto.DeviceEvaluationDto:
         evaluation = self.get_full_evaluation(device_identifier, patch_build)
         evaluation.vulnerabilities.sort(key=lambda v: v.score, reverse=True)
         evaluation.vulnerabilities = evaluation.vulnerabilities[
@@ -102,6 +93,7 @@ class IterativeEvaluationService(EvaluationService):
         evaluation.vulnerabilities = self._trim_vulnerabilities(
             evaluation.vulnerabilities
         )
+
         return evaluation
 
     def _trim_vulnerabilities(
@@ -112,6 +104,7 @@ class IterativeEvaluationService(EvaluationService):
             if v.score > 7.0:
                 v.cwes = self._trim_cwes(v.cwes)
                 trimmed_vulnerabilities.append(v)
+
         return trimmed_vulnerabilities
 
     def _trim_cwes(self, cwes: list[common_dto.CweDto]) -> list[common_dto.CweDto]:
@@ -123,6 +116,7 @@ class IterativeEvaluationService(EvaluationService):
                 )
                 cwe.capecs = self._trim_capecs(cwe.capecs)
                 trimmed_cwes.append(cwe)
+
         return trimmed_cwes
 
     def _trim_detection_methods(
@@ -131,10 +125,12 @@ class IterativeEvaluationService(EvaluationService):
         trimmed_detection_methods = [
             m for m in detection_methods if m.effectiveness.lower() == "high"
         ]
+
         return trimmed_detection_methods
 
     def _trim_capecs(
         self, capecs: list[common_dto.CAPECDto]
     ) -> list[common_dto.CAPECDto]:
         trimmed_capecs = [m for m in capecs if m.likelihood_of_attack.lower() == "high"]
+
         return trimmed_capecs

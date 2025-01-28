@@ -1,7 +1,10 @@
 import typing
 
+from langchain_anthropic import ChatAnthropic
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import MemorySaver
 
 from common import requests
 from hbit import (
@@ -16,7 +19,43 @@ from hbit import (
     types,
     utils,
 )
+from hbit.evaluations import device_evaluations, patch_evaluations
 from hbit.extractors import device_extractors, patch_extractors
+
+
+def create_services(
+    device_extractor_type: enums.DeviceExtractorType,
+    patch_extractor_type: enums.PatchExtractorType,
+    device_evaluation_type: enums.DeviceEvaluationType,
+    patch_evaluation_type: enums.PatchEvaluationType,
+    summary_service_type: enums.SummaryServiceType,
+    model_provider: enums.ModelProvider = enums.ModelProvider.GROQ,
+) -> services.ServiceContainer:
+    service_factory = ServicesFactory()
+
+    service_factory.add_db()
+    service_factory.add_requests()
+    service_factory.add_client()
+
+    # TODO: Move this logic to service factory
+    match model_provider:
+        case enums.ModelProvider.GROQ:
+            service_factory.add_models()
+        case enums.ModelProvider.OPEN_AI:
+            service_factory.add_chatgpt_models()
+        case enums.ModelProvider.ANTHROPIC:
+            service_factory.add_anthropic_models()
+        case enums.ModelProvider.DEEPSEEK:
+            service_factory.add_deepseek_models()
+
+    service_factory.add_saver()
+    service_factory.add_device_extractor(device_extractor_type)
+    service_factory.add_patch_extractor(patch_extractor_type)
+    service_factory.add_device_evaluation_service(device_evaluation_type)
+    service_factory.add_patch_evaluation_service(patch_evaluation_type)
+    service_factory.add_summary_service(summary_service_type)
+
+    return service_factory.registry
 
 
 class ServicesFactory:
@@ -59,6 +98,84 @@ class ServicesFactory:
         self.registry.register_service(types.DefaultModel, default_model)
         self.registry.register_service(types.CodeModel, code_model)
         self.registry.register_service(types.SmallModel, smaller_model)
+        return self
+
+    def add_chatgpt_models(
+        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
+    ) -> typing.Self:
+        rate_limiter = InMemoryRateLimiter(
+            requests_per_second=requests_per_second,
+            check_every_n_seconds=requests_per_second * 10,
+            max_bucket_size=1,
+        )
+
+        default_model_name = "gpt-4o-mini"
+        default_model = ChatOpenAI(
+            model=default_model_name,
+            temperature=0,
+            seed=settings.MODEL_SEED,
+            rate_limiter=rate_limiter,
+        )
+
+        self.registry.register_service(types.DefaultModel, default_model)
+        self.registry.register_service(types.CodeModel, default_model)
+        self.registry.register_service(types.SmallModel, default_model)
+        return self
+
+    def add_anthropic_models(
+        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
+    ) -> typing.Self:
+        rate_limiter = InMemoryRateLimiter(
+            requests_per_second=requests_per_second,
+            check_every_n_seconds=requests_per_second * 10,
+            max_bucket_size=1,
+        )
+
+        default_model_name = "claude-3-5-haiku-20241022"
+        default_model_name = "claude-3-sonnet-20240229"
+        default_model = ChatAnthropic(
+            model=default_model_name,  # type: ignore
+            temperature=0,
+            rate_limiter=rate_limiter,
+        )
+
+        self.registry.register_service(types.DefaultModel, default_model)
+        self.registry.register_service(types.CodeModel, default_model)
+        self.registry.register_service(types.SmallModel, default_model)
+        return self
+
+    def add_deepseek_models(
+        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
+    ) -> typing.Self:
+        rate_limiter = InMemoryRateLimiter(
+            requests_per_second=requests_per_second,
+            check_every_n_seconds=requests_per_second * 10,
+            max_bucket_size=1,
+        )
+
+        default_model_name = "deepseek-chat"
+        default_model = ChatAnthropic(
+            model=default_model_name,  # type: ignore
+            temperature=0,
+            rate_limiter=rate_limiter,
+        )
+        code_model_name = "deepseek-reasoner"
+        code_model = ChatGroq(
+            model=code_model_name,
+            temperature=0,
+            seed=settings.MODEL_SEED,  # type: ignore
+            rate_limiter=rate_limiter,
+        )
+
+        self.registry.register_service(types.DefaultModel, default_model)
+        self.registry.register_service(types.CodeModel, code_model)
+        self.registry.register_service(types.SmallModel, default_model)
+        return self
+
+    def add_saver(self) -> typing.Self:
+        saver = MemorySaver()
+        self.registry.register_service(types.Saver, saver)
+
         return self
 
     def add_db(self) -> typing.Self:
@@ -115,18 +232,45 @@ class ServicesFactory:
         self.registry.register_service(extractors.PatchExtractor, patch_extractor)
         return self
 
-    def add_evaluation_service(self, type: enums.EvaluationServiceType) -> typing.Self:
+    def add_device_evaluation_service(
+        self, type: enums.DeviceEvaluationType
+    ) -> typing.Self:
         client = self.registry.get_service(clients.HBITClient)
 
         match type:
-            case enums.EvaluationServiceType.IMPERATIVE:
-                evaluation_service = evaluations.IterativeEvaluationService(client)
-            case enums.EvaluationServiceType.AI:
+            case enums.DeviceEvaluationType.IMPERATIVE:
+                evaluation_service = device_evaluations.IterativeEvaluationService(
+                    client
+                )
+            case enums.DeviceEvaluationType.AI:
                 code_model = self.registry.get_service(types.CodeModel)
-                evaluation_service = evaluations.AiEvaluationService(code_model, client)
+                evaluation_service = device_evaluations.AiDeviceEvaluationService(
+                    code_model, client
+                )
 
         self.registry.register_service(
-            evaluations.EvaluationService, evaluation_service
+            evaluations.DeviceEvaluationService, evaluation_service
+        )
+        return self
+
+    def add_patch_evaluation_service(
+        self, type: enums.PatchEvaluationType
+    ) -> typing.Self:
+        client = self.registry.get_service(clients.HBITClient)
+
+        match type:
+            case enums.PatchEvaluationType.IMPERATIVE:
+                evaluation_service = patch_evaluations.IterativePatchEvaluationService(
+                    client
+                )
+            case enums.PatchEvaluationType.AI:
+                code_model = self.registry.get_service(types.CodeModel)
+                evaluation_service = patch_evaluations.AiPatchEvaluationService(
+                    code_model, client
+                )
+
+        self.registry.register_service(
+            evaluations.PatchEvaluationService, evaluation_service
         )
         return self
 
@@ -142,23 +286,3 @@ class ServicesFactory:
 
         self.registry.register_service(summaries.SummaryService, summary_service)
         return self
-
-
-def create_services(
-    device_extractor_type: enums.DeviceExtractorType,
-    patch_extractor_type: enums.PatchExtractorType,
-    evaluation_service_type: enums.EvaluationServiceType,
-    summary_service_type: enums.SummaryServiceType,
-) -> services.ServiceContainer:
-    service_factory = ServicesFactory()
-
-    service_factory.add_db()
-    service_factory.add_requests()
-    service_factory.add_client()
-    service_factory.add_models()
-    service_factory.add_device_extractor(device_extractor_type)
-    service_factory.add_patch_extractor(patch_extractor_type)
-    service_factory.add_evaluation_service(evaluation_service_type)
-    service_factory.add_summary_service(summary_service_type)
-
-    return service_factory.registry

@@ -11,26 +11,50 @@ router = APIRouter()
 
 @router.get(
     "/device-evaluation",
-    response_model=common_dto.EvaluationDto,
+    response_model=common_dto.DeviceEvaluationDto,
 )
 def read_device_evaluation(
     services: svcs.fastapi.DepContainer,
     super_user: deps.CurrentSuperUser,
     device_identifier: str,
     patch_build: str,
-) -> common_dto.EvaluationDto:
+) -> common_dto.DeviceEvaluationDto:
     """
     Retrieve device evaluation details.
     """
     session = services.get(Session)
 
     try:
-        device_evaluation = views.read_evaluation(
+        device_evaluation = views.read_device_evaluation(
             session, device_identifier, patch_build
         )
     except views.errors.DoesNotExist:
         raise HTTPException(
             status_code=404,
-            detail="Evaluation not found. Combination of patch build and device identifier is invalid.",
+            detail="Device evaluation not found. Combination of patch build and device identifier is invalid.",
         )
     return device_evaluation
+
+
+@router.get(
+    "/patch-evaluation",
+    response_model=common_dto.PatchEvaluationDto,
+)
+def read_patch_evaluation(
+    services: svcs.fastapi.DepContainer,
+    super_user: deps.CurrentSuperUser,
+    patch_build: str,
+) -> common_dto.PatchEvaluationDto:
+    """
+    Retrieve patch evaluation details.
+    """
+    session = services.get(Session)
+
+    try:
+        patch_evaluation = views.read_patch_evaluation(session, patch_build)
+    except views.errors.DoesNotExist:
+        raise HTTPException(
+            status_code=404,
+            detail="Patch evaluation not found. Provided patch build is invalid.",
+        )
+    return patch_evaluation

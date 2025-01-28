@@ -24,6 +24,7 @@ class ChainDeviceEvaluator:
         graph_builder.add_edge(START, "get_device_identifier")
         self.graph = graph_builder.compile(checkpointer=saver)
 
+    # TODO: Add Memory Savers
     def get_device_security_answer(self, question: str) -> str:
         response = "Nothing was generated!"
         step: dict[str, typing.Any] = {}
@@ -46,7 +47,7 @@ class ChainDeviceEvaluator:
         if evaluation was retrieved."""
         summary_service = self.registry.get_service(summaries.SummaryService)
         summary = summary_service.generate_summary(
-            question=state["question"], evaluation=state["device_evaluation"]
+            text=state["question"], evaluation=state["device_evaluation"]
         )
         return {"device_summary": summary}
 
@@ -54,7 +55,9 @@ class ChainDeviceEvaluator:
         self, state: dto.ChainStateSchema
     ) -> dict[str, typing.Any]:
         """Get the evaluation of a device."""
-        evaluation_service = self.registry.get_service(evaluations.EvaluationService)
+        evaluation_service = self.registry.get_service(
+            evaluations.DeviceEvaluationService
+        )
         evaluation = evaluation_service.get_trimmed_evaluation(
             device_identifier=state["device_identifier"],
             patch_build=state["patch_build"],
