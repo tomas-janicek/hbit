@@ -23,7 +23,7 @@ from hbit import (
 )
 from hbit.evaluations import device_evaluations, patch_evaluations
 from hbit.extractors import device_extractors, patch_extractors
-from hbit.prompting import general_prompting
+from hbit.prompting import chat_prompting, general_prompting
 
 
 def create_services(
@@ -44,19 +44,19 @@ def create_services(
     match model_provider:
         case enums.ModelProvider.GROQ:
             service_factory.add_models()
-            service_factory.add_general_prompt_templates()
+            service_factory.add_chat_prompt_templates()
         case enums.ModelProvider.OPEN_AI:
-            service_factory.add_chatgpt_models()
-            service_factory.add_general_prompt_templates()
+            service_factory.add_openai_models()
+            service_factory.add_chat_prompt_templates()
         case enums.ModelProvider.ANTHROPIC:
             service_factory.add_anthropic_models()
-            service_factory.add_general_prompt_templates()
+            service_factory.add_chat_prompt_templates()
         case enums.ModelProvider.DEEPSEEK:
             service_factory.add_deepseek_models()
-            service_factory.add_general_prompt_templates()
+            service_factory.add_chat_prompt_templates()
         case enums.ModelProvider.GOOGLE:
             service_factory.add_google_models()
-            service_factory.add_general_prompt_templates()
+            service_factory.add_chat_prompt_templates()
 
     service_factory.add_saver()
     service_factory.add_device_extractor(device_extractor_type)
@@ -111,7 +111,7 @@ class ServicesFactory:
         self.registry.register_service(types.ExtractionModel, code_model)
         return self
 
-    def add_chatgpt_models(
+    def add_openai_models(
         self, requests_per_second: float = settings.REQUESTS_PER_SECOND
     ) -> typing.Self:
         rate_limiter = InMemoryRateLimiter(
@@ -120,7 +120,7 @@ class ServicesFactory:
             max_bucket_size=1,
         )
 
-        default_model_name = "gpt-4o-mini"
+        default_model_name = "gpt-4o"
         default_model = ChatOpenAI(
             model=default_model_name,
             temperature=0,
@@ -128,10 +128,18 @@ class ServicesFactory:
             rate_limiter=rate_limiter,
         )
 
+        small_model_name = "gpt-4o-mini"
+        small_model = ChatOpenAI(
+            model=small_model_name,
+            temperature=0,
+            seed=settings.MODEL_SEED,
+            rate_limiter=rate_limiter,
+        )
+
         self.registry.register_service(types.DefaultModel, default_model)
-        self.registry.register_service(types.CodeModel, default_model)
-        self.registry.register_service(types.SmallModel, default_model)
-        self.registry.register_service(types.ExtractionModel, default_model)
+        self.registry.register_service(types.CodeModel, small_model)
+        self.registry.register_service(types.SmallModel, small_model)
+        self.registry.register_service(types.ExtractionModel, small_model)
         return self
 
     def add_anthropic_models(
@@ -155,11 +163,17 @@ class ServicesFactory:
             temperature=0,
             rate_limiter=rate_limiter,
         )
+        code_model_name = "claude-3-5-sonnet-latest"
+        code_model = ChatAnthropic(
+            model=code_model_name,  # type: ignore
+            temperature=0,
+            rate_limiter=rate_limiter,
+        )
 
         self.registry.register_service(types.DefaultModel, default_model)
-        self.registry.register_service(types.CodeModel, default_model)
+        self.registry.register_service(types.CodeModel, code_model)
         self.registry.register_service(types.SmallModel, small_model)
-        self.registry.register_service(types.ExtractionModel, small_model)
+        self.registry.register_service(types.ExtractionModel, code_model)
         return self
 
     def add_deepseek_models(
@@ -201,29 +215,27 @@ class ServicesFactory:
             max_bucket_size=1,
         )
 
-        default_model_name = "gemini-1.5-flash"
+        default_model_name = "gemini-2.0-flash-exp"
         default_model = ChatGoogleGenerativeAI(
             model=default_model_name,
             temperature=0,
             seed=settings.MODEL_SEED,  # type: ignore
             rate_limiter=rate_limiter,
         )
-        code_model_name = "gemini-2.0-flash-exp"
-        code_model = ChatGoogleGenerativeAI(
-            model=code_model_name,
-            temperature=0,
-            seed=settings.MODEL_SEED,  # type: ignore
-            rate_limiter=rate_limiter,
-        )
 
         self.registry.register_service(types.DefaultModel, default_model)
-        self.registry.register_service(types.CodeModel, code_model)
+        self.registry.register_service(types.CodeModel, default_model)
         self.registry.register_service(types.SmallModel, default_model)
         self.registry.register_service(types.ExtractionModel, default_model)
         return self
 
     def add_general_prompt_templates(self) -> typing.Self:
         prompt_store = general_prompting.GeneralPromptStore()
+        self.registry.register_service(prompting.PromptStore, prompt_store)
+        return self
+
+    def add_chat_prompt_templates(self) -> typing.Self:
+        prompt_store = chat_prompting.ChatPromptStore()
         self.registry.register_service(prompting.PromptStore, prompt_store)
         return self
 
@@ -259,11 +271,11 @@ class ServicesFactory:
         prompt_store = self.registry.get_service(prompting.PromptStore)
 
         match type:
-            case enums.DeviceExtractorType.SQL_EXTRACTOR:
+            case enums.DeviceExtractorType.STRUCTURED_EXTRACTOR:
                 device_extractor = device_extractors.JsonDeviceExtractor(
                     model=default_model, db=db, prompt_store=prompt_store
                 )
-            case enums.DeviceExtractorType.STRUCTURED_EXTRACTOR:
+            case enums.DeviceExtractorType.SQL_EXTRACTOR:
                 device_extractor = device_extractors.SqlDeviceExtractor(
                     model=default_model, db=db, prompt_store=prompt_store
                 )
@@ -277,11 +289,11 @@ class ServicesFactory:
         prompt_store = self.registry.get_service(prompting.PromptStore)
 
         match type:
-            case enums.PatchExtractorType.SQL_EXTRACTOR:
+            case enums.PatchExtractorType.STRUCTURED_EXTRACTOR:
                 patch_extractor = patch_extractors.JsonPatchExtractor(
                     model=default_model, db=db, prompt_store=prompt_store
                 )
-            case enums.PatchExtractorType.STRUCTURED_EXTRACTOR:
+            case enums.PatchExtractorType.SQL_EXTRACTOR:
                 patch_extractor = patch_extractors.SqlPatchExtractor(
                     model=default_model, db=db, prompt_store=prompt_store
                 )
@@ -301,8 +313,9 @@ class ServicesFactory:
                 )
             case enums.DeviceEvaluationType.AI:
                 code_model = self.registry.get_service(types.CodeModel)
+                prompt_store = self.registry.get_service(prompting.PromptStore)
                 evaluation_service = device_evaluations.AiDeviceEvaluationService(
-                    code_model, client
+                    code_model, prompt_store, client
                 )
 
         self.registry.register_service(
@@ -322,8 +335,9 @@ class ServicesFactory:
                 )
             case enums.PatchEvaluationType.AI:
                 code_model = self.registry.get_service(types.CodeModel)
+                prompt_store = self.registry.get_service(prompting.PromptStore)
                 evaluation_service = patch_evaluations.AiPatchEvaluationService(
-                    code_model, client
+                    code_model, prompt_store, client
                 )
 
         self.registry.register_service(
@@ -334,11 +348,14 @@ class ServicesFactory:
     def add_summary_service(self, type: enums.SummaryServiceType) -> typing.Self:
         default_model = self.registry.get_service(types.DefaultModel)
         small_model = self.registry.get_service(types.SmallModel)
+        prompt_store = self.registry.get_service(prompting.PromptStore)
 
         match type:
             case enums.SummaryServiceType.AI:
                 summary_service = summaries.AiSummaryService(
-                    summary_model=small_model, analysis_model=default_model
+                    summary_model=small_model,
+                    analysis_model=default_model,
+                    prompt_store=prompt_store,
                 )
 
         self.registry.register_service(summaries.SummaryService, summary_service)

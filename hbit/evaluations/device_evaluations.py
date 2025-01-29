@@ -4,7 +4,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import Runnable
 
 from common import dto as common_dto
-from hbit import clients, settings
+from hbit import clients, prompting, settings
 
 from . import base
 
@@ -15,12 +15,16 @@ class AiDeviceEvaluationService(base.DeviceEvaluationService):
     def __init__(
         self,
         model: BaseChatModel,
+        prompt_store: prompting.PromptStore,
         client: clients.HBITClient,
         n_vulnerabilities: int = settings.N_VULNERABILITIES,
         n_max_tokens: int = settings.N_TOKEN_GENERATION_LIMIT,
     ) -> None:
-        self.vulnerability_summarizer: Runnable[str, common_dto.VulnerabilityDto] = (
-            model.with_structured_output(common_dto.VulnerabilityDto)
+        self.prompt_store = prompt_store
+        self.vulnerability_summarizer: Runnable[
+            dict[str, str], common_dto.VulnerabilityDto
+        ] = self.prompt_store.device_evaluation_trimming | model.with_structured_output(
+            common_dto.VulnerabilityDto
         )  # type: ignore
         self.client = client
         self.n_vulnerabilities = n_vulnerabilities
@@ -49,18 +53,10 @@ class AiDeviceEvaluationService(base.DeviceEvaluationService):
                     vul.n_json_tokens,
                 )
                 continue
-            prompt = (
-                "You are a cyber-security expert tasked with analyzing a vulnerability data provided in JSON format. "
-                "Your goal is to identify and return only the most critical parts of given vulnerability. "
-                "Focus on parts that, if exploited, could cause significant problems for the user. Ensure the JSON structure "
-                "of the vulnerability remains unchanged. If any field within a vulnerability contains a list of items, you can also "
-                "remove less important items from those lists, while retaining only the most critical information. "
-                "Remove or exclude less important vulnerabilities and details while maintaining the overall format.\n\n"
-                "Here is the vulnerability:\n\n"
-                f"{vul.model_dump_json()}"
-            )
             trimmed_vul: common_dto.VulnerabilityDto = (
-                self.vulnerability_summarizer.invoke(prompt)
+                self.vulnerability_summarizer.invoke(
+                    {"vulnerability": vul.model_dump_json()}
+                )
             )
             trimmed_vulnerabilities.append(trimmed_vul)
 

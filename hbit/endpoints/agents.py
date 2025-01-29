@@ -2,32 +2,17 @@ from langchain.schema import BaseMessage
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langgraph.prebuilt import create_react_agent  # type: ignore
 
-from hbit import core, dto, services, types, utils
+from hbit import core, dto, prompting, services, types, utils
 from hbit.tools import TOOLS
 
 
 class AgentDeviceEvaluator:
-    # TODO: Give agent more context to how he should approach evaluation
-    # - ask user
-    # - gather data
-    # - ...
-    system_message = (
-        "You are an expert cyber-security analyst. "
-        "Your purpose is to request relevant information from user about what he want to analyze "
-        "and then use this information to call tools that retrieve relevant security information "
-        "about whatever user requested.\n"
-        "Follow these guidelines:\n"
-        "- Your task is to analyze user's device and patch so if user did not provide any relevant information, "
-        "about what device and patch ask him to specify what device he is using and what version or patch "
-        "is installed on that device.\n"
-        "- If you retrieve any evaluation, create summary and return the response to user.\n"
-    )
-
     def __init__(self, registry: services.ServiceContainer) -> None:
         self.registry = registry
         model = self.registry.get_service(types.DefaultModel)
         db = self.registry.get_service(core.DatabaseService)
         saver = self.registry.get_service(types.Saver)
+        prompt_store = self.registry.get_service(prompting.PromptStore)
         toolkit = SQLDatabaseToolkit(db=db.db_tool, llm=model)
         tools = [*toolkit.get_tools(), *TOOLS]
 
@@ -36,7 +21,7 @@ class AgentDeviceEvaluator:
             tools=tools,
             state_schema=dto.AgentStateSchema,
             checkpointer=saver,
-            messages_modifier=self.system_message,
+            messages_modifier=prompt_store.agent_system_message,
         )
 
     def get_device_security_answer(

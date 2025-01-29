@@ -65,8 +65,79 @@ class GeneralPromptStore(base.PromptStore):
             "Only extract relevant information from the text. "
             "Make sure you only extract the values of the attributes mentioned in the question. "
             "If you do not know the value of an attribute asked to extract, "
-            "return null for the attribute's value."
+            "return null for the attribute's value. Return as a JSON object."
         ),
         suffix=("Input: {input}\nOutput: "),
         input_variables=["input"],
+    )
+
+    evaluation_part_summary = PromptTemplate.from_template(
+        template=(
+            "Given the following user question, and evaluation, "
+            "answer the user question, create summary of given evaluation. "
+            "Bare in mind this summary will then be used with other summaries "
+            "generated similar way.\n\n"
+            "Question: {text}\n"
+            "Evaluation Part:\n"
+            "{evaluation_chunk}"
+        )
+    )
+
+    # TODO: Add structure to this summary, some points that should be returned to every device evaluation
+    # TODO: Sections like weaknesses, recommendations, strengths (security features), overall security rating (one number),
+    # TODO: most important vuls list, conclusion.
+    evaluation_summary = PromptTemplate.from_template(
+        template=(
+            "You are expert cyber-security analyst."
+            "Given the following user's question, and summaries for different security "
+            "evaluations generate analysis to user's question.\n\n"
+            "Question: {text}\n"
+            "Evaluation Summaries:\n"
+            "{summaries_str}"
+        )
+    )
+
+    device_evaluation_trimming = PromptTemplate.from_template(
+        template=(
+            "You are a cybersecurity expert analyzing a vulnerability report in JSON format. "
+            "Your task is to extract and return only the most critical information while ensuring the JSON structure remains unchanged. "
+            "Prioritize elements that, if exploited, pose the most significant security risks to the user. "
+            "You may trim non-essential details within fields but **must not remove any JSON fields under any circumstances**. "
+            "If a field contains a list, you may reduce its contents by keeping only the most critical items, but the field itself must remain. "
+            'Do not delete fields, set them to null, or alter the structure. Instead, replace non-essential values with an empty string (`""`). '
+            "Ensure that the JSON output retains every original field while containing only the most essential security-related information.\n\n"
+            "Here is the vulnerability data:\n\n"
+            "{vulnerability}"
+        )
+    )
+
+    patch_evaluation_trimming = PromptTemplate.from_template(
+        template=(
+            "You are a cyber-security expert tasked with analyzing a vulnerability data provided in JSON format. "
+            "Your goal is to identify and return only the most critical parts of given vulnerability. "
+            "Focus on parts that, if exploited, could cause significant problems for the user. Ensure the JSON structure "
+            "of the vulnerability remains unchanged. If any field within a vulnerability contains a list of items, you can also "
+            "remove less important items from those lists, while retaining only the most critical information. "
+            "Remove or exclude less important vulnerabilities and details while maintaining the overall format. "
+            "Never remove fields completely or replace their value with null. If you want to remove any information, "
+            "set filed to empty string. Make sure you do not remove any JSON fields!\n\n"
+            "Here is the vulnerability:\n\n"
+            "{vulnerability}"
+        )
+    )
+
+    # TODO: Give agent more context to how he should approach evaluation
+    # - ask user
+    # - gather data
+    # - ...
+    agent_system_message = (
+        "You are an expert cyber-security analyst. "
+        "Your purpose is to request relevant information from user about what he want to analyze "
+        "and then use this information to call tools that retrieve relevant security information "
+        "about whatever user requested.\n"
+        "Follow these guidelines:\n"
+        "- Your task is to analyze user's device and patch so if user did not provide any relevant information, "
+        "about what device and patch ask him to specify what device he is using and what version or patch "
+        "is installed on that device.\n"
+        "- If you retrieve any evaluation, create summary and return the response to user.\n"
     )
