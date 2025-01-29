@@ -48,18 +48,16 @@ class Patch(pydantic.BaseModel):
 class AgentStateSchema(typing.TypedDict):
     messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
 
-    device_evaluation: common_dto.DeviceEvaluationDto
-    patch_evaluation: common_dto.PatchEvaluationDto
+    evaluation: common_dto.EvaluationDto | None
 
     is_last_step: IsLastStep
     remaining_steps: RemainingSteps
 
 
-class DeviceEvaluationStateSchema(typing.TypedDict):
+class EvaluationStateSchema(typing.TypedDict):
     messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
 
-    device_evaluation: common_dto.DeviceEvaluationDto | None
-    patch_evaluation: common_dto.PatchEvaluationDto | None
+    evaluation: common_dto.EvaluationDto | None
 
 
 class QuestionStateSchema(typing.TypedDict):

@@ -293,6 +293,11 @@ class DeviceDto(BaseModel):
         return "\n".join(part for part in parts if part)
 
 
+###############
+# Evaluations #
+###############
+
+
 class DeviceEvaluationDto(BaseModel):
     device: DeviceDto
     patch: PatchDto
@@ -404,3 +409,6 @@ class PatchEvaluationDto(BaseModel):
             else:
                 n_prepared_tokens += vul.n_json_tokens
                 chunked_vuls.append(vul)
+
+
+EvaluationDto = DeviceEvaluationDto | PatchEvaluationDto

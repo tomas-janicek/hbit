@@ -34,7 +34,6 @@ class AgentDeviceEvaluator:
         self.agent_executor = create_react_agent(
             model=model,
             tools=tools,
-            # TODO: How can I either use BaseModel or make patch_evaluation optional
             state_schema=dto.AgentStateSchema,
             checkpointer=saver,
             messages_modifier=self.system_message,
@@ -48,7 +47,10 @@ class AgentDeviceEvaluator:
 
         response = "Nothing was generated!"
         for event in self.agent_executor.stream(
-            {"messages": [{"role": "user", "content": question}]},
+            {
+                "messages": [{"role": "user", "content": question}],
+                "state": {"patch_evaluation": None, "device_evaluation": None},
+            },
             config={
                 "configurable": {"registry": self.registry, "thread_id": thread_id}
             },

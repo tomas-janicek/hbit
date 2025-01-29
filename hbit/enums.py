@@ -30,3 +30,4 @@ class ModelProvider(enum.Enum):
     OPEN_AI = enum.auto()
     ANTHROPIC = enum.auto()
     DEEPSEEK = enum.auto()
+    GOOGLE = enum.auto()

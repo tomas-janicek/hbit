@@ -1,60 +1,31 @@
 import logging
 import typing
 
-from langchain.prompts import (
-    ChatPromptTemplate,
-)
 from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables import RunnableSerializable
 from sqlalchemy import text as _text
 
-from hbit import core, dto, utils
+from hbit import core, dto, prompting, utils
 
 from . import base
 
 _log = logging.getLogger(__name__)
 
 
-class StructureDeviceExtractor(base.DeviceExtractor):
-    examples = (
-        "Input Example: 'How secure is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83.'\n"
-        f"Output Example: {{{dto.Device(identifier=None, name='iPhone 13 Pro', manufacturer=None, model=None).model_dump_json()}}}\n\n"
-        "Input Example: 'How secure is my device with model Apple device with model A2483.'\n"
-        f"Output Example: {{{dto.Device(identifier=None, name=None, manufacturer='Apple', model='a2483').model_dump_json()}}}\n\n"
-        "Input Example: 'Should I buy new phone if I have iphone14,2.'\n"
-        f"Output Example: {{{dto.Device(identifier='iphone14,2', name=None, manufacturer=None, model=None).model_dump_json()}}}\n\n"
-        "Input Example: 'Is iPhone 6 and iphone7,2 the same device?'\n"
-        f"Output Example: {{{dto.Device(identifier='iphone7,2', name='iPhone 6', manufacturer=None, model=None).model_dump_json()}}}\n\n"
-        "Input Example: 'How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?'\n"
-        f"Output Example: {{{dto.Device(identifier=None, name='iPhone XS', manufacturer=None, model=None).model_dump_json()}}}\n\n"
-        "Input Example: 'Which version is my iPhone running if the patch is labeled with build 24D12?'\n"
-        f"Output Example: {{{dto.Device(identifier=None, name=None, manufacturer=None, model=None).model_dump_json()}}}\n\n"
-        "Input Example: 'Can you tell me the version number for the patch identified by build 23C45?'\n"
-        f"Output Example: {{{dto.Device(identifier=None, name=None, manufacturer=None, model=None).model_dump_json()}}}\n\n"
-    )
-
-    # TODO: Find a way how to use specific prompt for specific model
-    prompt_template = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are an expert extraction algorithm. "
-                "Only extract relevant information from the text. "
-                "Make sure you only extract the values of the attributes mentioned in the question. "
-                "If you do not know the value of an attribute asked to extract, "
-                "return null for the attribute's value.\n\n"
-                "{examples}",
-            ),
-            ("human", "{input}"),
-        ]
-    )
-
-    def __init__(self, model: BaseChatModel, db: core.DatabaseService) -> None:
+class JsonDeviceExtractor(base.DeviceExtractor):
+    def __init__(
+        self,
+        model: BaseChatModel,
+        db: core.DatabaseService,
+        prompt_store: prompting.PromptStore,
+    ) -> None:
         self.model = model
         self.db = db
+        self.prompt_store = prompt_store
+
         self.extractor_model: RunnableSerializable[
             dict[str, typing.Any], dto.Device
-        ] = self.prompt_template | (
+        ] = self.prompt_store.device_json_extraction | (
             self.model.with_structured_output(schema=dto.Device)
         )  # type: ignore
 
@@ -87,58 +58,24 @@ class StructureDeviceExtractor(base.DeviceExtractor):
         return result
 
     def extract_device_info(self, text: str) -> dto.Device:
-        device = self.extractor_model.invoke({"input": text, "examples": self.examples})
+        device = self.extractor_model.invoke({"input": text})
         return device
 
 
 class SqlDeviceExtractor(base.DeviceExtractor):
-    examples = (
-        "Input Example: How secure is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83.\n"
-        "Output Example: SELECT identifier FROM devices WHERE name LIKE 'iPhone 13 Pro'\n\n"
-        "Input Example: How secure is my device with model Apple device with model A2483.\n"
-        "Output Example: SELECT identifier FROM devices WHERE models LIKE '%A2483%'\n\n"
-        "Input Example: Should I buy new phone if I have iphone14,2.\n"
-        "Output Example: SELECT identifier FROM devices WHERE identifier LIKE 'iphone14,2'\n\n"
-        "Input Example: Is iPhone 6 and iphone7,2 the same device?\n"
-        "Output Example: SELECT identifier FROM devices WHERE identifier LIKE 'iphone7,2' AND name LIKE 'iPhone 6'\n\n"
-        "Input Example: How secure is an iPhone XS running iOS 17.7.2? Are there any known vulnerabilities or security concerns with this version?\n"
-        "Output Example: SELECT identifier FROM devices WHERE name LIKE 'iPhone XS'\n\n"
-        "Input Example: Which version is my iPhone running if the patch is labeled with build 24D12?\n"
-        "Output Example: \n\n"
-        "Input Example: Can you tell me the version number for the patch identified by build 23C45?\n"
-        "Output Example: \n\n"
-    )
-    query_prompt_template = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "Your task is to generate a syntactically correct {dialect} query based on the given input question. "
-                "The purpose of the query is to extract the `identifier` column from the `devices` table. "
-                "If there is no mention of any device, return empty string instead of SQL query.\n"
-                "Follow these guidelines:\n"
-                "1. Only filter by values explicitly mentioned in the input question that are relevant to the device.\n"
-                "2. Avoid querying columns that are not part of the schema or values do not resamble values in rows.\n"
-                "3. Prioritize using unique columns that can independently identify a device by themselves.\n"
-                "4. Use `LIKE` for string matching to ensure case-insensitive filtering.\n"
-                "5. Completely ignore JSON fields.\n"
-                "6. Make sure values you are filtering by resemble the values in the schema."
-                "\n\n"
-                "The schema of the `devices` table is as follows:\n"
-                "{table_info}\n\n"
-                "Examples:\n"
-                "{examples}",
-            ),
-            ("user", "Question: {input}"),
-        ]
-    )
-
-    def __init__(self, model: BaseChatModel, db: core.DatabaseService) -> None:
+    def __init__(
+        self,
+        model: BaseChatModel,
+        db: core.DatabaseService,
+        prompt_store: prompting.PromptStore,
+    ) -> None:
         self.model = model
         self.db = db
+        self.prompt_store = prompt_store
 
         self.structured_llm: RunnableSerializable[
             dict[str, typing.Any], dto.QueryOutput
-        ] = self.query_prompt_template | self.model.with_structured_output(
+        ] = self.prompt_store.device_sql_extraction | self.model.with_structured_output(
             dto.QueryOutput
         )  # type: ignore
 
@@ -159,7 +96,6 @@ class SqlDeviceExtractor(base.DeviceExtractor):
                 "dialect": self.db.dialect,
                 "table_info": devices_table_info,
                 "input": question,
-                "examples": self.examples,
             }
         )
         return result

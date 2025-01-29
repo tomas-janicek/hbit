@@ -14,7 +14,7 @@ from hbit import dto, evaluations, extractors, services, summaries
 
 @tool(return_direct=True)
 def generate_evaluation_summary(
-    state: typing.Annotated[dto.DeviceEvaluationStateSchema, InjectedState],
+    state: typing.Annotated[dto.EvaluationStateSchema, InjectedState],
     config: RunnableConfig,
 ) -> str:
     """Generate summary from evaluation."""
@@ -22,14 +22,9 @@ def generate_evaluation_summary(
     summary_service = registry.get_service(summaries.SummaryService)
 
     user_inputs = _get_human_messages(state["messages"])
-    device_evaluation = state.get("device_evaluation")
-    patch_evaluation = state.get("patch_evaluation")
+    evaluation = state.get("evaluation")
 
-    if device_evaluation and patch_evaluation:
-        evaluation = device_evaluation
-    elif device_evaluation or patch_evaluation:
-        evaluation = device_evaluation or patch_evaluation
-    else:
+    if not evaluation:
         # TODO: Create specific error message when patch and device are wrong
         raise ValueError(
             "First call get_device_evaluation or get_patch_evaluation to get at least one "
@@ -38,7 +33,7 @@ def generate_evaluation_summary(
 
     summary = summary_service.generate_summary(
         text=user_inputs,
-        evaluation=evaluation,  # type: ignore
+        evaluation=evaluation,
     )
     return summary
 
@@ -78,7 +73,7 @@ def get_device_evaluation(  # type: ignore
 
     return Command(
         update={
-            "device_evaluation": evaluation,
+            "evaluation": evaluation,
             "messages": [
                 ToolMessage(
                     "Successfully retrieved device evaluation.",
@@ -111,7 +106,7 @@ def get_patch_evaluation(  # type: ignore
 
     return Command(
         update={
-            "patch_evaluation": evaluation,
+            "evaluation": evaluation,
             "messages": [
                 ToolMessage(
                     "Successfully retrieved patch evaluation.",

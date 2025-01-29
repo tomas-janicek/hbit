@@ -6,4 +6,5 @@ from langgraph.checkpoint.memory import MemorySaver
 SmallModel = typing.NewType("SmallModel", BaseChatModel)
 CodeModel = typing.NewType("CodeModel", BaseChatModel)
 DefaultModel = typing.NewType("DefaultModel", BaseChatModel)
+ExtractionModel = typing.NewType("ExtractionModel", BaseChatModel)
 Saver = typing.NewType("Saver", MemorySaver)

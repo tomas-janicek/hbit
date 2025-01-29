@@ -2,6 +2,7 @@ import typing
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.rate_limiters import InMemoryRateLimiter
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
@@ -13,6 +14,7 @@ from hbit import (
     enums,
     evaluations,
     extractors,
+    prompting,
     services,
     settings,
     summaries,
@@ -21,6 +23,7 @@ from hbit import (
 )
 from hbit.evaluations import device_evaluations, patch_evaluations
 from hbit.extractors import device_extractors, patch_extractors
+from hbit.prompting import general_prompting
 
 
 def create_services(
@@ -41,12 +44,19 @@ def create_services(
     match model_provider:
         case enums.ModelProvider.GROQ:
             service_factory.add_models()
+            service_factory.add_general_prompt_templates()
         case enums.ModelProvider.OPEN_AI:
             service_factory.add_chatgpt_models()
+            service_factory.add_general_prompt_templates()
         case enums.ModelProvider.ANTHROPIC:
             service_factory.add_anthropic_models()
+            service_factory.add_general_prompt_templates()
         case enums.ModelProvider.DEEPSEEK:
             service_factory.add_deepseek_models()
+            service_factory.add_general_prompt_templates()
+        case enums.ModelProvider.GOOGLE:
+            service_factory.add_google_models()
+            service_factory.add_general_prompt_templates()
 
     service_factory.add_saver()
     service_factory.add_device_extractor(device_extractor_type)
@@ -98,6 +108,7 @@ class ServicesFactory:
         self.registry.register_service(types.DefaultModel, default_model)
         self.registry.register_service(types.CodeModel, code_model)
         self.registry.register_service(types.SmallModel, smaller_model)
+        self.registry.register_service(types.ExtractionModel, code_model)
         return self
 
     def add_chatgpt_models(
@@ -120,6 +131,7 @@ class ServicesFactory:
         self.registry.register_service(types.DefaultModel, default_model)
         self.registry.register_service(types.CodeModel, default_model)
         self.registry.register_service(types.SmallModel, default_model)
+        self.registry.register_service(types.ExtractionModel, default_model)
         return self
 
     def add_anthropic_models(
@@ -131,17 +143,23 @@ class ServicesFactory:
             max_bucket_size=1,
         )
 
-        default_model_name = "claude-3-5-haiku-20241022"
-        default_model_name = "claude-3-sonnet-20240229"
+        default_model_name = "claude-3-5-haiku-latest"
         default_model = ChatAnthropic(
             model=default_model_name,  # type: ignore
+            temperature=0,
+            rate_limiter=rate_limiter,
+        )
+        small_model_name = "claude-3-haiku-20240307"
+        small_model = ChatAnthropic(
+            model=small_model_name,  # type: ignore
             temperature=0,
             rate_limiter=rate_limiter,
         )
 
         self.registry.register_service(types.DefaultModel, default_model)
         self.registry.register_service(types.CodeModel, default_model)
-        self.registry.register_service(types.SmallModel, default_model)
+        self.registry.register_service(types.SmallModel, small_model)
+        self.registry.register_service(types.ExtractionModel, small_model)
         return self
 
     def add_deepseek_models(
@@ -157,6 +175,7 @@ class ServicesFactory:
         default_model = ChatAnthropic(
             model=default_model_name,  # type: ignore
             temperature=0,
+            seed=settings.MODEL_SEED,  # type: ignore
             rate_limiter=rate_limiter,
         )
         code_model_name = "deepseek-reasoner"
@@ -170,6 +189,42 @@ class ServicesFactory:
         self.registry.register_service(types.DefaultModel, default_model)
         self.registry.register_service(types.CodeModel, code_model)
         self.registry.register_service(types.SmallModel, default_model)
+        self.registry.register_service(types.ExtractionModel, default_model)
+        return self
+
+    def add_google_models(
+        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
+    ) -> typing.Self:
+        rate_limiter = InMemoryRateLimiter(
+            requests_per_second=requests_per_second,
+            check_every_n_seconds=requests_per_second * 10,
+            max_bucket_size=1,
+        )
+
+        default_model_name = "gemini-1.5-flash"
+        default_model = ChatGoogleGenerativeAI(
+            model=default_model_name,
+            temperature=0,
+            seed=settings.MODEL_SEED,  # type: ignore
+            rate_limiter=rate_limiter,
+        )
+        code_model_name = "gemini-2.0-flash-exp"
+        code_model = ChatGoogleGenerativeAI(
+            model=code_model_name,
+            temperature=0,
+            seed=settings.MODEL_SEED,  # type: ignore
+            rate_limiter=rate_limiter,
+        )
+
+        self.registry.register_service(types.DefaultModel, default_model)
+        self.registry.register_service(types.CodeModel, code_model)
+        self.registry.register_service(types.SmallModel, default_model)
+        self.registry.register_service(types.ExtractionModel, default_model)
+        return self
+
+    def add_general_prompt_templates(self) -> typing.Self:
+        prompt_store = general_prompting.GeneralPromptStore()
+        self.registry.register_service(prompting.PromptStore, prompt_store)
         return self
 
     def add_saver(self) -> typing.Self:
@@ -199,34 +254,36 @@ class ServicesFactory:
         return self
 
     def add_device_extractor(self, type: enums.DeviceExtractorType) -> typing.Self:
-        default_model = self.registry.get_service(types.DefaultModel)
+        default_model = self.registry.get_service(types.ExtractionModel)
         db = self.registry.get_service(core.DatabaseService)
+        prompt_store = self.registry.get_service(prompting.PromptStore)
 
         match type:
             case enums.DeviceExtractorType.SQL_EXTRACTOR:
-                device_extractor = device_extractors.StructureDeviceExtractor(
-                    model=default_model, db=db
+                device_extractor = device_extractors.JsonDeviceExtractor(
+                    model=default_model, db=db, prompt_store=prompt_store
                 )
             case enums.DeviceExtractorType.STRUCTURED_EXTRACTOR:
                 device_extractor = device_extractors.SqlDeviceExtractor(
-                    model=default_model, db=db
+                    model=default_model, db=db, prompt_store=prompt_store
                 )
 
         self.registry.register_service(extractors.DeviceExtractor, device_extractor)
         return self
 
     def add_patch_extractor(self, type: enums.PatchExtractorType) -> typing.Self:
-        default_model = self.registry.get_service(types.DefaultModel)
+        default_model = self.registry.get_service(types.ExtractionModel)
         db = self.registry.get_service(core.DatabaseService)
+        prompt_store = self.registry.get_service(prompting.PromptStore)
 
         match type:
             case enums.PatchExtractorType.SQL_EXTRACTOR:
-                patch_extractor = patch_extractors.StructurePatchExtractor(
-                    model=default_model, db=db
+                patch_extractor = patch_extractors.JsonPatchExtractor(
+                    model=default_model, db=db, prompt_store=prompt_store
                 )
             case enums.PatchExtractorType.STRUCTURED_EXTRACTOR:
                 patch_extractor = patch_extractors.SqlPatchExtractor(
-                    model=default_model, db=db
+                    model=default_model, db=db, prompt_store=prompt_store
                 )
 
         self.registry.register_service(extractors.PatchExtractor, patch_extractor)
