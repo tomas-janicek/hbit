@@ -15,7 +15,7 @@ def get_agent_evaluation(question: str) -> None:
         summary_service_type=enums.SummaryServiceType.AI,
     )
     agent_evaluator = endpoints.AgentDeviceEvaluator(registry=registry)
-    response = agent_evaluator.get_device_security_answer(question)
+    response = agent_evaluator.get_device_security_answer(question, print_steps=True)
 
     _print_response(response)
 
@@ -30,7 +30,7 @@ def get_chain_evaluation(question: str) -> None:
         summary_service_type=enums.SummaryServiceType.AI,
     )
     chain_evaluator = endpoints.ChainDeviceEvaluator(registry=registry)
-    response = chain_evaluator.get_device_security_answer(question)
+    response = chain_evaluator.get_device_security_answer(question, print_steps=True)
 
     _print_response(response)
 

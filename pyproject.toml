@@ -31,7 +31,6 @@ dependencies = [
     "jinja2>=3.1.4",
     "pydantic-settings>=2.6.1",
     "python-jose[cryptography]>=3.3.0",
-    "python-multipart>=0.0.19",
     "sentry-sdk[fastapi]>=2.19.1",
     "sqlalchemy>=2.0.36",
     "sqlmodel>=0.0.22",
@@ -47,6 +46,10 @@ dependencies = [
     "langchain-anthropic>=0.3.4",
     "langchain-deepseek-official>=0.1.0",
     "langchain-google-genai>=2.0.9",
+    "chainlit==2.0.603",
+    "streamlit>=1.41.1",
+    "watchdog>=6.0.0",
+    "langchain-mistralai>=0.2.6",
 ]
 
 [tool.uv]

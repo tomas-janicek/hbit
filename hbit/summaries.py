@@ -8,11 +8,7 @@ from hbit import prompting, settings
 
 
 class SummaryService(typing.Protocol):
-    def generate_summary(
-        self,
-        text: str,
-        evaluation: common_dto.EvaluationDto,
-    ) -> str: ...
+    def generate_summary(self, evaluation: common_dto.EvaluationDto) -> str: ...
 
 
 class AiSummaryService(SummaryService):
@@ -28,23 +24,19 @@ class AiSummaryService(SummaryService):
         self.analysis_model = self.prompt_store.evaluation_summary | analysis_model
         self.n_max_tokens = n_max_tokens
 
-    def generate_summary(
-        self,
-        text: str,
-        evaluation: common_dto.EvaluationDto,
-    ) -> str:
+    def generate_summary(self, evaluation: common_dto.EvaluationDto) -> str:
         summaries: list[str] = []
         for evaluation_chunk in evaluation.get_chunked_by_n_tokens(
             n_max_tokens=self.n_max_tokens
         ):
             summary: AIMessage = self.summary_model.invoke(
-                {"input": text, "evaluation_chunk": evaluation_chunk}
+                {"evaluation_chunk": evaluation_chunk}
             )  # type: ignore
             summaries.append(str(summary.content))
 
         summaries_str = "\n - ".join(summaries)
         analysis: AIMessage = self.analysis_model.invoke(
-            {"input": text, "summaries_str": summaries_str}
+            {"summaries_str": summaries_str}
         )  # type: ignore
 
         return str(analysis.content)

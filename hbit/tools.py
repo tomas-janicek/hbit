@@ -12,7 +12,7 @@ from langgraph.types import Command
 from hbit import dto, evaluations, extractors, services, summaries
 
 
-@tool(return_direct=True)
+@tool
 def generate_evaluation_summary(
     state: typing.Annotated[dto.EvaluationStateSchema, InjectedState],
     config: RunnableConfig,
@@ -20,8 +20,6 @@ def generate_evaluation_summary(
     """Generate summary from evaluation."""
     registry = _get_registry_from_config(config)
     summary_service = registry.get_service(summaries.SummaryService)
-
-    user_inputs = _get_human_messages(state["messages"])
     evaluation = state.get("evaluation")
 
     if not evaluation:
@@ -31,13 +29,11 @@ def generate_evaluation_summary(
             "successful evaluation."
         )
 
-    summary = summary_service.generate_summary(
-        text=user_inputs,
-        evaluation=evaluation,
-    )
+    summary = summary_service.generate_summary(evaluation=evaluation)
     return summary
 
 
+# TODO: Can this retrieve list of devices mentioned?
 @tool
 def get_device_evaluation(  # type: ignore
     device_identifier: typing.Annotated[
@@ -51,7 +47,8 @@ def get_device_evaluation(  # type: ignore
 ) -> Command:  # type: ignore
     """Input to this tool are device identifier and patch build strings. Be sure that the
     device identifier and patch build have valid formats by calling get_device_identifier
-    and get_patch_build! If device identifier or patch build is not correct, an error will
+    and get_patch_build! If device identifier or patch build is not correct,
+    -an error will
     be returned. If so, try using one of get_device_identifier or get_patch_build again.
     If you successfully retrieved evaluation, generate it's summary using
     generate_evaluation_summary tool.
@@ -117,6 +114,7 @@ def get_patch_evaluation(  # type: ignore
     )  # type: ignore
 
 
+# TODO: Can I somehow use both SQL and JSON extractors
 @tool
 def get_device_identifier(
     state: typing.Annotated[dto.QuestionStateSchema, InjectedState],
@@ -184,3 +182,8 @@ def _get_human_messages(messages: typing.Sequence[BaseMessage]) -> str:
             case _:
                 pass
     return "\n".join(human_texts)
+
+
+class MessagesTuple(typing.NamedTuple):
+    last_message: str
+    combined_messages: str

@@ -23,7 +23,7 @@ class AiDeviceEvaluationService(base.DeviceEvaluationService):
         self.prompt_store = prompt_store
         self.vulnerability_summarizer: Runnable[
             dict[str, str], common_dto.VulnerabilityDto
-        ] = self.prompt_store.device_evaluation_trimming | model.with_structured_output(
+        ] = self.prompt_store.evaluation_trimming | model.with_structured_output(
             common_dto.VulnerabilityDto
         )  # type: ignore
         self.client = client

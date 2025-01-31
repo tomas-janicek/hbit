@@ -111,15 +111,13 @@ class ChatPromptStore(base.PromptStore):
             (
                 "system",
                 (
-                    "Given the following user question, and evaluation, "
-                    "answer the user's question, create summary of given evaluation. "
+                    "You are expert cyber-security analyst. Given the evaluation, create summary. "
                     "Bare in mind this summary will then be used with other summaries "
                     "generated similar way.\n\n"
                     "Evaluation Part:\n"
                     "{evaluation_chunk}"
                 ),
-            ),
-            ("human", "User's question: {input}"),
+            )
         ]
     )
 
@@ -131,52 +129,29 @@ class ChatPromptStore(base.PromptStore):
             (
                 "system",
                 (
-                    "You are expert cyber-security analyst."
-                    "Given the following user's question and summaries for different security "
-                    "evaluations generate security analysis to user's question.\n\n"
+                    "You are expert cyber-security analyst. Given the following summaries for different security "
+                    "evaluations generate security analysis.\n\n"
                     "Evaluation Summaries:\n"
                     "{summaries_str}"
                 ),
             ),
-            ("human", "User's question: {input}"),
         ]
     )
 
-    device_evaluation_trimming = ChatPromptTemplate.from_messages(
+    evaluation_trimming = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
                 (
                     "You are a cybersecurity expert analyzing a vulnerability report in JSON format. "
-                    "Given the following user's question, and summaries for different security evaluations generate analysis to user's question."
-                    "Your task is to extract and return only the most critical information while ensuring the JSON structure remains unchanged. "
-                    "Prioritize elements that, if exploited, pose the most significant security risks to the user. "
-                    "You may trim non-essential details within fields but **must not remove any JSON fields under any circumstances**. "
-                    "If a field contains a list, you may reduce its contents by keeping only the most critical items, but the field itself must remain. "
-                    'Do not delete fields, set them to null, or alter the structure. Instead, replace non-essential values with an empty string (`""`). '
-                    "Ensure that the JSON output retains every original field while containing only the most essential security-related information.\n\n"
+                    "Your task is to extract and return only the most critical information while ensuring that the JSON structure remains **completely unchanged**. "
+                    "This means:\n"
+                    "- **Do not remove any fields** under any circumstances.\n"
+                    "- If a field contains a list, you may reduce its contents by keeping only the most critical items, but the field itself must always remain.\n"
+                    '- If a field contains non-essential information, replace its value with an empty string (`""`), but **never set it to null** or delete it.\n'
+                    "- The final output **must contain every field from the original JSON, even if empty**.\n\n"
+                    "**Before finalizing your output, carefully compare your result to the original JSON to confirm that all fields are retained.**\n\n"
                     "Here is the vulnerability data:\n\n"
-                    "{vulnerability}"
-                ),
-            )
-        ]
-    )
-
-    patch_evaluation_trimming = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                (
-                    "You are a cyber-security expert tasked with analyzing a vulnerability data provided in JSON format. "
-                    "Given the following user's question, and summaries for different security evaluations generate analysis to user's question."
-                    "Your goal is to identify and return only the most critical parts of given vulnerability. "
-                    "Focus on parts that, if exploited, could cause significant problems for the user. Ensure the JSON structure "
-                    "of the vulnerability remains unchanged. If any field within a vulnerability contains a list of items, you can also "
-                    "remove less important items from those lists, while retaining only the most critical information. "
-                    "Remove or exclude less important vulnerabilities and details while maintaining the overall format. "
-                    "Never remove fields completely or replace their value with null. If you want to remove any information, "
-                    "set filed to empty string. Make sure you do not remove any JSON fields!\n\n"
-                    "Here is the vulnerability:\n\n"
                     "{vulnerability}"
                 ),
             )

@@ -31,3 +31,4 @@ class ModelProvider(enum.Enum):
     ANTHROPIC = enum.auto()
     DEEPSEEK = enum.auto()
     GOOGLE = enum.auto()
+    MISTRAL = enum.auto()

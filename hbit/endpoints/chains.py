@@ -25,17 +25,21 @@ class ChainDeviceEvaluator:
         self.graph = graph_builder.compile(checkpointer=saver)
 
     # TODO: Add Memory Savers
-    def get_device_security_answer(self, question: str) -> str:
+    def get_device_security_answer(
+        self, question: str, print_steps: bool = False
+    ) -> str:
         response = "Nothing was generated!"
         step: dict[str, typing.Any] = {}
         for step in self.graph.stream({"question": question}, stream_mode="updates"):
             for key, values in step.items():
                 name = key.replace("_", " ")
-                print(
-                    f"================================== {name.capitalize()} ==================================\n"
-                )
+                if print_steps:
+                    print(
+                        f"================================== {name.capitalize()} ==================================\n"
+                    )
                 for value in values.values():
-                    print(value)
+                    if print_steps:
+                        print(value)
                     response = value
 
         return response
@@ -47,7 +51,7 @@ class ChainDeviceEvaluator:
         if evaluation was retrieved."""
         summary_service = self.registry.get_service(summaries.SummaryService)
         summary = summary_service.generate_summary(
-            text=state["question"], evaluation=state["device_evaluation"]
+            evaluation=state["device_evaluation"]
         )
         return {"device_summary": summary}
 

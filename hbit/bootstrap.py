@@ -4,6 +4,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
+from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -32,7 +33,7 @@ def create_services(
     device_evaluation_type: enums.DeviceEvaluationType,
     patch_evaluation_type: enums.PatchEvaluationType,
     summary_service_type: enums.SummaryServiceType,
-    model_provider: enums.ModelProvider = enums.ModelProvider.GROQ,
+    model_provider: enums.ModelProvider = enums.ModelProvider.OPEN_AI,
 ) -> services.ServiceContainer:
     service_factory = ServicesFactory()
 
@@ -57,6 +58,9 @@ def create_services(
         case enums.ModelProvider.GOOGLE:
             service_factory.add_google_models()
             service_factory.add_chat_prompt_templates()
+        case enums.ModelProvider.MISTRAL:
+            service_factory.add_mistral_models()
+            service_factory.add_chat_prompt_templates()
 
     service_factory.add_saver()
     service_factory.add_device_extractor(device_extractor_type)
@@ -77,7 +81,7 @@ class ServicesFactory:
     ) -> typing.Self:
         rate_limiter = InMemoryRateLimiter(
             requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second * 10,
+            check_every_n_seconds=requests_per_second / 10,
             max_bucket_size=1,
         )
 
@@ -116,7 +120,7 @@ class ServicesFactory:
     ) -> typing.Self:
         rate_limiter = InMemoryRateLimiter(
             requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second * 10,
+            check_every_n_seconds=requests_per_second / 10,
             max_bucket_size=1,
         )
 
@@ -147,11 +151,12 @@ class ServicesFactory:
     ) -> typing.Self:
         rate_limiter = InMemoryRateLimiter(
             requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second * 10,
+            check_every_n_seconds=requests_per_second / 10,
             max_bucket_size=1,
         )
 
-        default_model_name = "claude-3-5-haiku-latest"
+        # default_model_name = "claude-3-5-haiku-latest"
+        default_model_name = "claude-3-5-sonnet-latest"
         default_model = ChatAnthropic(
             model=default_model_name,  # type: ignore
             temperature=0,
@@ -176,12 +181,46 @@ class ServicesFactory:
         self.registry.register_service(types.ExtractionModel, code_model)
         return self
 
+    def add_mistral_models(
+        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
+    ) -> typing.Self:
+        rate_limiter = InMemoryRateLimiter(
+            requests_per_second=requests_per_second,
+            check_every_n_seconds=requests_per_second / 10,
+            max_bucket_size=1,
+        )
+
+        default_model_name = "mistral-large-latest"
+        default_model = ChatMistralAI(
+            model=default_model_name,  # type: ignore
+            temperature=0,
+            rate_limiter=rate_limiter,
+        )
+        small_model_name = "claude-3-haiku-20240307"
+        small_model = ChatMistralAI(
+            model=small_model_name,  # type: ignore
+            temperature=0,
+            rate_limiter=rate_limiter,
+        )
+        code_model_name = "mistral-small-latest"
+        code_model = ChatMistralAI(
+            model=code_model_name,  # type: ignore
+            temperature=0,
+            rate_limiter=rate_limiter,
+        )
+
+        self.registry.register_service(types.DefaultModel, default_model)
+        self.registry.register_service(types.CodeModel, code_model)
+        self.registry.register_service(types.SmallModel, small_model)
+        self.registry.register_service(types.ExtractionModel, code_model)
+        return self
+
     def add_deepseek_models(
         self, requests_per_second: float = settings.REQUESTS_PER_SECOND
     ) -> typing.Self:
         rate_limiter = InMemoryRateLimiter(
             requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second * 10,
+            check_every_n_seconds=requests_per_second / 10,
             max_bucket_size=1,
         )
 
@@ -211,7 +250,7 @@ class ServicesFactory:
     ) -> typing.Self:
         rate_limiter = InMemoryRateLimiter(
             requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second * 10,
+            check_every_n_seconds=requests_per_second / 10,
             max_bucket_size=1,
         )
 

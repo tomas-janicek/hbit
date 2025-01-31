@@ -28,6 +28,6 @@ class ImperativeEvaluator:
         evaluation = self.evaluation_service.get_trimmed_evaluation(
             device_identifier, patch_build
         )
-        summary = self.summary_service.generate_summary(question, evaluation)
+        summary = self.summary_service.generate_summary(evaluation)
 
         return summary
