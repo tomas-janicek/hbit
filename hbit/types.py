@@ -7,4 +7,6 @@ SmallModel = typing.NewType("SmallModel", BaseChatModel)
 CodeModel = typing.NewType("CodeModel", BaseChatModel)
 DefaultModel = typing.NewType("DefaultModel", BaseChatModel)
 ExtractionModel = typing.NewType("ExtractionModel", BaseChatModel)
+AgentModel = typing.NewType("AgentModel", BaseChatModel)
+
 Saver = typing.NewType("Saver", MemorySaver)

@@ -9,7 +9,7 @@ from hbit.tools import TOOLS
 class AgentDeviceEvaluator:
     def __init__(self, registry: services.ServiceContainer) -> None:
         self.registry = registry
-        model = self.registry.get_service(types.DefaultModel)
+        model = self.registry.get_service(types.AgentModel)
         db = self.registry.get_service(core.DatabaseService)
         saver = self.registry.get_service(types.Saver)
         prompt_store = self.registry.get_service(prompting.PromptStore)

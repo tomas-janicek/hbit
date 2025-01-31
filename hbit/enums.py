@@ -1,34 +1,35 @@
 import enum
 
 
-class DeviceExtractorType(enum.Enum):
-    SQL_EXTRACTOR = enum.auto()
-    STRUCTURED_EXTRACTOR = enum.auto()
+class DeviceExtractorType(enum.StrEnum):
+    SQL = "SQL"
+    JSON = "JSON"
 
 
-class PatchExtractorType(enum.Enum):
-    SQL_EXTRACTOR = enum.auto()
-    STRUCTURED_EXTRACTOR = enum.auto()
+class PatchExtractorType(enum.StrEnum):
+    SQL = "SQL"
+    JSON = "JSON"
 
 
-class DeviceEvaluationType(enum.Enum):
-    IMPERATIVE = enum.auto()
-    AI = enum.auto()
+class DeviceEvaluationType(enum.StrEnum):
+    IMPERATIVE = "Imperative"
+    AI = "AI"
 
 
-class PatchEvaluationType(enum.Enum):
-    IMPERATIVE = enum.auto()
-    AI = enum.auto()
+class PatchEvaluationType(enum.StrEnum):
+    IMPERATIVE = "Imperative"
+    AI = "AI"
 
 
-class SummaryServiceType(enum.Enum):
-    AI = enum.auto()
+class SummaryServiceType(enum.StrEnum):
+    AI = "AI"
 
 
-class ModelProvider(enum.Enum):
-    GROQ = enum.auto()
-    OPEN_AI = enum.auto()
-    ANTHROPIC = enum.auto()
-    DEEPSEEK = enum.auto()
-    GOOGLE = enum.auto()
-    MISTRAL = enum.auto()
+class ModelProvider(enum.StrEnum):
+    GROQ = "GROQ"
+    OPEN_AI = "OpenAI"
+    ANTHROPIC = "Anthropic"
+    DEEPSEEK = "DeepSeek"
+    GOOGLE = "Google"
+    MISTRAL = "Mistral"
+    TOGETHER_AI = "Together AI"

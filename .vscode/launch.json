@@ -13,7 +13,8 @@
             "args": [
                 "run",
                 "hbit/ui/security_agent.py",
-                "--server.fileWatcherType=auto"
+                "--server.fileWatcherType=auto",
+                "--server.runOnSave=true",
             ],
             "cwd": "${workspaceFolder}",
             "jinja": true,

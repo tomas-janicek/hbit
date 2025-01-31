@@ -4,22 +4,13 @@ from langchain_core.messages import ToolMessage
 
 from hbit import bootstrap, endpoints, enums, utils
 
+############################
+# Configure Streamlit Page #
+############################
+
+
 st.set_page_config(page_title="👮‍♂️ Security Agent", page_icon="🚨")
 st.title("👮‍♂️ Security Agent: Chat with security expert")
-
-if "messages" not in st.session_state:
-    registry = bootstrap.create_services(
-        device_extractor_type=enums.DeviceExtractorType.STRUCTURED_EXTRACTOR,
-        patch_extractor_type=enums.PatchExtractorType.STRUCTURED_EXTRACTOR,
-        device_evaluation_type=enums.DeviceEvaluationType.AI,
-        patch_evaluation_type=enums.PatchEvaluationType.AI,
-        summary_service_type=enums.SummaryServiceType.AI,
-        model_provider=enums.ModelProvider.ANTHROPIC,
-    )
-    agent_evaluator = endpoints.AgentDeviceEvaluator(registry)
-    agent_graph = agent_evaluator.agent_executor
-    st.session_state["registry"] = registry
-    st.session_state["agent_graph"] = agent_graph
 
 if "messages" not in st.session_state:
     # default initial message to render in message state
@@ -29,6 +20,11 @@ if "thread_id" not in st.session_state:
     thread_id = utils.generate_random_string(5)
     st.session_state["thread_id"] = thread_id
 
+
+################
+# Display Chat #
+################
+
 # Loop through all messages in the session state and render them as a chat on every st.refresh mech
 for msg in st.session_state.messages:
     # https://docs.streamlit.io/develop/api-reference/chat/st.chat_message
@@ -37,6 +33,88 @@ for msg in st.session_state.messages:
         st.chat_message("assistant").write(msg.content)
     if isinstance(msg, HumanMessage):
         st.chat_message("user").write(msg.content)
+
+
+###################
+# Display Sidebar #
+###################
+
+
+def update_configuration() -> None:
+    # reset chat on every model change
+    st.session_state["messages"] = [AIMessage(content="How can I help you?")]
+
+    registry = bootstrap.create_services(
+        device_extractor_type=st.session_state.get("device_extractor_type")
+        or enums.DeviceExtractorType.JSON,
+        patch_extractor_type=st.session_state.get("patch_extractor_type")
+        or enums.PatchExtractorType.JSON,
+        device_evaluation_type=st.session_state.get("device_evaluation_type")
+        or enums.DeviceEvaluationType.AI,
+        patch_evaluation_type=st.session_state.get("patch_evaluation_type")
+        or enums.PatchEvaluationType.AI,
+        summary_service_type=enums.SummaryServiceType.AI,
+        model_provider=st.session_state.get("model_provider")
+        or enums.ModelProvider.OPEN_AI,
+    )
+    agent_evaluator = endpoints.AgentDeviceEvaluator(registry)
+    agent_graph = agent_evaluator.agent_executor
+    st.session_state["registry"] = registry
+    st.session_state["agent_graph"] = agent_graph
+
+
+if "registry" not in st.session_state:
+    update_configuration()
+
+
+with st.sidebar:
+    st.header("Mode Configuration", divider="gray")
+
+    model_provider = st.pills(
+        "Model Provider",
+        list(enums.ModelProvider),
+        selection_mode="single",
+        key="model_provider",
+        default=enums.ModelProvider.OPEN_AI,
+        on_change=update_configuration,
+    )
+    device_extractor = st.pills(
+        "Device Extractor",
+        list(enums.DeviceExtractorType),
+        selection_mode="single",
+        key="device_extractor_type",
+        default=enums.DeviceExtractorType.JSON,
+        on_change=update_configuration,
+    )
+    patch_extractor = st.pills(
+        "Patch Extractor",
+        list(enums.PatchExtractorType),
+        selection_mode="single",
+        key="patch_extractor_type",
+        default=enums.PatchExtractorType.JSON,
+        on_change=update_configuration,
+    )
+    device_evaluation = st.pills(
+        "Device Evaluation",
+        list(enums.DeviceEvaluationType),
+        selection_mode="single",
+        key="device_evaluation_type",
+        default=enums.DeviceEvaluationType.AI,
+        on_change=update_configuration,
+    )
+    patch_evaluation = st.pills(
+        "Patch Evaluation",
+        list(enums.PatchEvaluationType),
+        selection_mode="single",
+        key="patch_evaluation_type",
+        default=enums.PatchEvaluationType.AI,
+        on_change=update_configuration,
+    )
+
+
+##############
+# Call Agent #
+##############
 
 
 def call_agent(input: str) -> str:
