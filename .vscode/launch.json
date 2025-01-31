@@ -5,23 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Chainlit UI",
-            "consoleTitle": "Chainlit UI",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "chainlit",
-            "args": [
-                "run",
-                "hbit/ui.py",
-                "--port=8001",
-                "--watch",
-            ],
-            "cwd": "${workspaceFolder}",
-            "jinja": true,
-            "envFile": "${workspaceFolder}/.env",
-            "justMyCode": false,
-        },
-        {
             "name": "Streamlit UI",
             "consoleTitle": "Streamlit UI",
             "type": "debugpy",
