@@ -29,7 +29,7 @@ class ModelProvider(enum.StrEnum):
     GROQ = "GROQ"
     OPEN_AI = "OpenAI"
     ANTHROPIC = "Anthropic"
-    DEEPSEEK = "DeepSeek"
     GOOGLE = "Google"
     MISTRAL = "Mistral"
     TOGETHER_AI = "Together AI"
+    NVIDIA = "NVIDIA"

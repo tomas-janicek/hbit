@@ -898,6 +898,7 @@ dependencies = [
     { name = "langchain-google-genai" },
     { name = "langchain-groq" },
     { name = "langchain-mistralai" },
+    { name = "langchain-nvidia-ai-endpoints" },
     { name = "langchain-openai" },
     { name = "langchain-together" },
     { name = "langgraph" },
@@ -944,6 +945,7 @@ requires-dist = [
     { name = "langchain-google-genai", specifier = ">=2.0.9" },
     { name = "langchain-groq", specifier = ">=0.2.1" },
     { name = "langchain-mistralai", specifier = ">=0.2.6" },
+    { name = "langchain-nvidia-ai-endpoints", specifier = ">=0.3.8" },
     { name = "langchain-openai", specifier = ">=0.2.11" },
     { name = "langchain-together", specifier = ">=0.3.0" },
     { name = "langgraph", specifier = ">=0.2.60" },
@@ -1392,6 +1394,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d6/16/b21233e816a3f7eddbca3cdbec673b47361af2d75db0dd511e34ce690ec4/langchain_mistralai-0.2.6.tar.gz", hash = "sha256:a861c6a5858a933ce63abb2cf9ea59e91d87103da2ddf08694a69a26be339d35", size = 15022 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/00/4f/bc04e96e95fb39bcb7afdad95a66ccb2037ca3d5a6e8c76cfd8f46e87f0f/langchain_mistralai-0.2.6-py3-none-any.whl", hash = "sha256:a7fde8094641e89309e2ee0db57fa06a1270b461c19d44e5d93e518270bbafee", size = 15768 },
+]
+
+[[package]]
+name = "langchain-nvidia-ai-endpoints"
+version = "0.3.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "langchain-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fb/6c/d37194e5c0a80029076799f1e092c779d8dae5d789aa914d2a57be404ed2/langchain_nvidia_ai_endpoints-0.3.8.tar.gz", hash = "sha256:b5af7e500557c398146c5963535901119d0a8722fb2174b56248a522d7569b5e", size = 37135 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/d3/ff83cc127fc7360ce5ada9e315436474eda24998a6b72cc28b3b7c076a88/langchain_nvidia_ai_endpoints-0.3.8-py3-none-any.whl", hash = "sha256:3e4a97b635c548e4d3a7e042ea6dd46f4cb618ec44190b761b26c5841931a0be", size = 41291 },
 ]
 
 [[package]]
