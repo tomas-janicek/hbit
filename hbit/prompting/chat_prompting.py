@@ -1,4 +1,8 @@
-from langchain.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
+from langchain.prompts import (
+    ChatPromptTemplate,
+    FewShotChatMessagePromptTemplate,
+    PromptTemplate,
+)
 
 from . import base, examples
 
@@ -51,7 +55,9 @@ class ChatPromptStore(base.PromptStore):
                     "Only extract relevant information from the text. "
                     "Make sure you only extract the values of the attributes mentioned in the question. "
                     "If you do not know the value of an attribute asked to extract, "
-                    "return null for the attribute's value."
+                    "return null for the attribute's value. Return as a JSON object. "
+                    "After extracting any information, make sure that "
+                    "extracted data are really part of the user input. If not, this data are not valid!"
                 ),
             ),
             device_json_few_shots,
@@ -59,6 +65,8 @@ class ChatPromptStore(base.PromptStore):
         ]
     )
 
+    # TODO: Review SQL prompts and make sure they can be used to retrieve two devices.
+    # TODO: And, they can work when AI will only gave them necessary information.
     patch_sql_few_shots = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt, examples=examples.patch_sql_few_shot_examples
     )
@@ -98,7 +106,9 @@ class ChatPromptStore(base.PromptStore):
                     "Only extract relevant information from the text. "
                     "Make sure you only extract the values of the attributes mentioned in the question. "
                     "If you do not know the value of an attribute asked to extract, "
-                    "return null for the attribute's value. Return as a JSON object."
+                    "return null for the attribute's value. Return as a JSON object. "
+                    "After extracting any information, make sure that "
+                    "extracted data are really part of the user input. If not, this data are not valid!"
                 ),
             ),
             patch_json_few_shots,
@@ -106,56 +116,35 @@ class ChatPromptStore(base.PromptStore):
         ]
     )
 
-    evaluation_part_summary = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                (
-                    "You are expert cyber-security analyst. Given the evaluation, create summary. "
-                    "Bare in mind this summary will then be used with other summaries "
-                    "generated similar way.\n\n"
-                    "Evaluation Part:\n"
-                    "{evaluation_chunk}"
-                ),
-            )
-        ]
+    evaluation_part_summary = PromptTemplate.from_template(
+        "You are expert cyber-security analyst. Given the evaluation, create summary. "
+        "Bare in mind this summary will then be used with other summaries "
+        "generated similar way.\n\n"
+        "Evaluation Part:\n"
+        "{evaluation_chunk}"
     )
 
     # TODO: Add structure to this summary, some points that should be returned to every device evaluation
     # TODO: Sections like weaknesses, recommendations, strengths (security features), overall security rating (one number),
     # TODO: most important vuls list, conclusion.
-    evaluation_summary = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                (
-                    "You are expert cyber-security analyst. Given the following summaries for different security "
-                    "evaluations generate security analysis.\n\n"
-                    "Evaluation Summaries:\n"
-                    "{summaries_str}"
-                ),
-            ),
-        ]
+    evaluation_summary = PromptTemplate.from_template(
+        "You are expert cyber-security analyst. Given the following summaries for different security "
+        "evaluations generate security analysis.\n\n"
+        "Evaluation Summaries:\n"
+        "{summaries_str}"
     )
 
-    evaluation_trimming = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                (
-                    "You are a cybersecurity expert analyzing a vulnerability report in JSON format. "
-                    "Your task is to extract and return only the most critical information while ensuring that the JSON structure remains **completely unchanged**. "
-                    "This means:\n"
-                    "- **Do not remove any fields** under any circumstances.\n"
-                    "- If a field contains a list, you may reduce its contents by keeping only the most critical items, but the field itself must always remain.\n"
-                    '- If a field contains non-essential information, replace its value with an empty string (`""`), but **never set it to null** or delete it.\n'
-                    "- The final output **must contain every field from the original JSON, even if empty**.\n\n"
-                    "**Before finalizing your output, carefully compare your result to the original JSON to confirm that all fields are retained.**\n\n"
-                    "Here is the vulnerability data:\n\n"
-                    "{vulnerability}"
-                ),
-            )
-        ]
+    evaluation_trimming = PromptTemplate.from_template(
+        "You are a cybersecurity expert analyzing a vulnerability report in JSON format. "
+        "Your task is to extract and return only the most critical information while ensuring that the JSON structure remains **completely unchanged**. "
+        "This means:\n"
+        "- **Do not remove any fields** under any circumstances.\n"
+        "- If a field contains a list, you may reduce its contents by keeping only the most critical items, but the field itself must always remain.\n"
+        '- If a field contains non-essential information, replace its value with an empty string (`""`), but **never set it to null** or delete it.\n'
+        "- The final output **must contain every field from the original JSON, even if empty**.\n\n"
+        "**Before finalizing your output, carefully compare your result to the original JSON to confirm that all fields are retained.**\n\n"
+        "Here is the vulnerability data:\n\n"
+        "{vulnerability}"
     )
 
     # TODO: Give agent more context to how he should approach evaluation
@@ -166,9 +155,10 @@ class ChatPromptStore(base.PromptStore):
         "You are an expert cyber-security analyst. "
         "Your purpose is to request relevant information from user about what he want to analyze "
         "and then use this information to call tools that retrieve relevant security information "
-        "about whatever user requested.\n"
+        "about whatever user requested. If a tool fails due to missing or insufficient information, "
+        "ask the user for the necessary details and retry.\n"
         "Follow these guidelines:\n"
-        "- Your task is to analyze user's device and patch so if user did not provide any relevant information, "
+        "- Your task is to analyze user's device or patch so if user did not provide any relevant information, "
         "about what device and patch ask him to specify what device he is using and what version or patch "
         "is installed on that device.\n"
         "- If you retrieve any evaluation, create summary and return the response to user.\n"

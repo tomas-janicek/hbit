@@ -196,7 +196,7 @@ class ModelServiceFactory:
         self.registry.register_service(types.DefaultModel, default_model)
         self.registry.register_service(types.CodeModel, default_model)
         self.registry.register_service(types.SmallModel, small_model)
-        self.registry.register_service(types.ExtractionModel, small_model)
+        self.registry.register_service(types.ExtractionModel, default_model)
         self.registry.register_service(types.AgentModel, default_model)
         return self
 

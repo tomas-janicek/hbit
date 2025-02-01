@@ -20,8 +20,7 @@ def get_device_evaluation(
 ) -> str:
     """Input to this tool are device identifier and patch build strings. Be sure that the
     device identifier and patch build have valid formats by calling get_device_identifier
-    and get_patch_build! If device identifier or patch build is not correct,
-    -an error will
+    and get_patch_build! If device identifier or patch build is not correct, an error will
     be returned. If so, try using one of get_device_identifier or get_patch_build again.
     If you successfully retrieved evaluation, generate it's summary using
     generate_evaluation_summary tool.
@@ -39,7 +38,7 @@ def get_device_evaluation(
         return summary
     except httpx.HTTPStatusError as error:
         detail = error.response.json().get("detail", "")
-        raise ValueError(
+        return (
             f"{detail}"
             "Try using other tools to get device identifier or patch build in "
             "correct format."
@@ -70,28 +69,29 @@ def get_patch_evaluation(
         return summary
     except httpx.HTTPStatusError as error:
         detail = error.response.json().get("detail", "")
-        raise ValueError(
-            f"{detail} Try using other tools to get patch build in correct format."
-        )
+        return f"{detail} Try using other tools to get patch build in correct format."
 
 
-# TODO: Can I somehow use both SQL and JSON extractors
 @tool
 def get_device_identifier(
     text: typing.Annotated[
-        str, "Human text that may contain information about devices."
+        str, "User's text that may contain information about devices."
     ],
     config: RunnableConfig,
 ) -> str | None:
-    """Get device identifier.
-    The input should contain ONLY text provided by user."""
+    """Input to this function is text from user's question talking about his device.
+    Use this tool if you need device identifier of device user mentioned and you
+    can not identify it. If no device was found, an error will be raised. If so,
+    ask user to provide more information about his device.
+    Example text: How secure is an iPhone XS?
+    Example output: iphone11,2"""
     registry = _get_registry_from_config(config)
     device_extractor = registry.get_service(extractors.DeviceExtractor)
 
     device_identifier = device_extractor.extract_device_identifier(text=text)
 
     if not device_identifier:
-        raise ValueError(
+        return (
             "User did not provide valid or enough data to identify device. "
             "Ask user to provide more information about device."
         )
@@ -102,19 +102,26 @@ def get_device_identifier(
 @tool
 def get_patch_build(
     text: typing.Annotated[
-        str, "Human text that may contain information about devices."
+        str, "User's text that may contain information about patches."
     ],
     config: RunnableConfig,
 ) -> str | None:
-    """Get patch build.
-    The input should contain ONLY text provided by user."""
+    """Input to this function is text from user's question talking about his patch.
+    Use this tool if you need patch build user mentioned and you
+    can not identify it. If no patch was found, an error will be raised. If so,
+    ask user to provide more information about patch his device has installed.
+    Example text: How secure is my iPhone 13 Pro if I have patch 18.1.0 installed?
+    Example output: 22b83"""
     registry = _get_registry_from_config(config)
     patch_extractor = registry.get_service(extractors.PatchExtractor)
 
     patch_build = patch_extractor.extract_patch_build(text=text)
 
     if not patch_build:
-        raise ValueError("User did not provide valid or enough data to identify patch.")
+        return (
+            "User did not provide valid or enough data to identify patch."
+            "Ask user to provide more information about patch installed on his device."
+        )
 
     return patch_build
 
@@ -135,3 +142,10 @@ def _get_registry_from_config(config: RunnableConfig) -> services.ServiceContain
         )
 
     return registry
+
+
+# TODO: Tools ideas:
+# - get all patches infos to help user get his patch / info
+# - how can I do the same for devices
+# - give user info on specific cve and other similar entities
+# - search engine to get the rest of the missing data
