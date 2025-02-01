@@ -41,9 +41,11 @@ class CVEScraper(base.Scraper[dto.CVE]):
             yield cve
 
     def _create_nvd_params(self) -> dict[str, str]:
-        # TODO: Write why we need to increase original patch
-        # TODO: Why isn't this taken care of by excluding?
+        """Function creates parameters for NVD API to retrieve vulnerabilities for give patch."""
         incremented_patch = normalizer.Version.validate_python(self.patch_name)
+        # We get vulnerabilities of given patch, by getting fixed vulnerabilities
+        # of all patches that were release after this patch. Because this patches are not installed,
+        # device
         incremented_patch.patch += 1
         params = {
             "virtualMatchString": "cpe:2.3:o:apple:iphone_os",

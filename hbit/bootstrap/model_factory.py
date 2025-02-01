@@ -1,7 +1,7 @@
 import typing
 
 from langchain_anthropic import ChatAnthropic
-from langchain_core.rate_limiters import InMemoryRateLimiter
+from langchain_core.rate_limiters import BaseRateLimiter, InMemoryRateLimiter
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_mistralai.chat_models import ChatMistralAI
@@ -14,8 +14,13 @@ from hbit.prompting import chat_prompting, general_prompting
 
 
 class ModelServiceFactory:
-    def __init__(self, registry: services.ServiceContainer) -> None:
+    def __init__(
+        self,
+        registry: services.ServiceContainer,
+        requests_per_second: float = settings.REQUESTS_PER_SECOND,
+    ) -> None:
         self.registry = registry
+        self.requests_per_second = requests_per_second
 
     def add_models(self, model_provider: enums.ModelProvider) -> None:
         match model_provider:
@@ -51,14 +56,8 @@ class ModelServiceFactory:
         self.registry.register_service(prompting.PromptStore, prompt_store)
         return self
 
-    def add_groq_models(
-        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
-    ) -> typing.Self:
-        rate_limiter = InMemoryRateLimiter(
-            requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second / 10,
-            max_bucket_size=1,
-        )
+    def add_groq_models(self) -> typing.Self:
+        rate_limiter = self._create_rate_limiter()
 
         default_model_name = "llama3-70b-8192"
         default_model = ChatGroq(
@@ -91,14 +90,8 @@ class ModelServiceFactory:
         self.registry.register_service(types.AgentModel, code_model)
         return self
 
-    def add_openai_models(
-        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
-    ) -> typing.Self:
-        rate_limiter = InMemoryRateLimiter(
-            requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second / 10,
-            max_bucket_size=1,
-        )
+    def add_openai_models(self) -> typing.Self:
+        rate_limiter = self._create_rate_limiter()
 
         default_model_name = "gpt-4o"
         default_model = ChatOpenAI(
@@ -123,14 +116,8 @@ class ModelServiceFactory:
         self.registry.register_service(types.AgentModel, default_model)
         return self
 
-    def add_anthropic_models(
-        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
-    ) -> typing.Self:
-        rate_limiter = InMemoryRateLimiter(
-            requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second / 10,
-            max_bucket_size=1,
-        )
+    def add_anthropic_models(self) -> typing.Self:
+        rate_limiter = self._create_rate_limiter()
 
         default_model_name = "claude-3-5-sonnet-latest"
         default_model = ChatAnthropic(
@@ -158,14 +145,8 @@ class ModelServiceFactory:
         self.registry.register_service(types.AgentModel, default_model)
         return self
 
-    def add_mistral_models(
-        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
-    ) -> typing.Self:
-        rate_limiter = InMemoryRateLimiter(
-            requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second / 10,
-            max_bucket_size=1,
-        )
+    def add_mistral_models(self) -> typing.Self:
+        rate_limiter = self._create_rate_limiter()
 
         default_model_name = "mistral-large-latest"
         default_model = ChatMistralAI(
@@ -193,14 +174,8 @@ class ModelServiceFactory:
         self.registry.register_service(types.AgentModel, default_model)
         return self
 
-    def add_google_models(
-        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
-    ) -> typing.Self:
-        rate_limiter = InMemoryRateLimiter(
-            requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second / 10,
-            max_bucket_size=1,
-        )
+    def add_google_models(self) -> typing.Self:
+        rate_limiter = self._create_rate_limiter()
 
         default_model_name = "gemini-1.5-pro"
         default_model = ChatGoogleGenerativeAI(
@@ -225,16 +200,10 @@ class ModelServiceFactory:
         self.registry.register_service(types.AgentModel, default_model)
         return self
 
-    def add_together_ai_models(
-        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
-    ) -> typing.Self:
-        rate_limiter = InMemoryRateLimiter(
-            requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second / 10,
-            max_bucket_size=1,
-        )
+    def add_together_ai_models(self) -> typing.Self:
+        rate_limiter = self._create_rate_limiter()
 
-        default_model_name = "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free"
+        default_model_name = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
         default_model = ChatTogether(
             model=default_model_name,
             temperature=0,
@@ -242,21 +211,23 @@ class ModelServiceFactory:
             rate_limiter=rate_limiter,
         )
 
+        small_model_name = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+        small_model = ChatTogether(
+            model=small_model_name,
+            temperature=0,
+            seed=settings.MODEL_SEED,
+            rate_limiter=rate_limiter,
+        )
+
         self.registry.register_service(types.DefaultModel, default_model)
-        self.registry.register_service(types.CodeModel, default_model)
-        self.registry.register_service(types.SmallModel, default_model)
+        self.registry.register_service(types.CodeModel, small_model)
+        self.registry.register_service(types.SmallModel, small_model)
         self.registry.register_service(types.ExtractionModel, default_model)
         self.registry.register_service(types.AgentModel, default_model)
         return self
 
-    def add_nvidia_models(
-        self, requests_per_second: float = settings.REQUESTS_PER_SECOND
-    ) -> typing.Self:
-        rate_limiter = InMemoryRateLimiter(
-            requests_per_second=requests_per_second,
-            check_every_n_seconds=requests_per_second / 10,
-            max_bucket_size=1,
-        )
+    def add_nvidia_models(self) -> typing.Self:
+        rate_limiter = self._create_rate_limiter()
 
         default_model_name = "meta/llama-3.3-70b-instruct"
         default_model = ChatNVIDIA(
@@ -272,3 +243,11 @@ class ModelServiceFactory:
         self.registry.register_service(types.ExtractionModel, default_model)
         self.registry.register_service(types.AgentModel, default_model)
         return self
+
+    def _create_rate_limiter(self) -> BaseRateLimiter:
+        rate_limiter = InMemoryRateLimiter(
+            requests_per_second=self.requests_per_second,
+            check_every_n_seconds=self.requests_per_second / 10,
+            max_bucket_size=1,
+        )
+        return rate_limiter

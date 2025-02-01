@@ -28,10 +28,10 @@ def read_device_evaluation(
         device_evaluation = views.read_device_evaluation(
             session, device_identifier, patch_build
         )
-    except views.errors.DoesNotExist:
+    except views.errors.DoesNotExist as error:
         raise HTTPException(
             status_code=404,
-            detail="Device evaluation not found. Combination of patch build and device identifier is invalid.",
+            detail=f"Device evaluation not found. {error!s}",
         )
     return device_evaluation
 

@@ -1,4 +1,3 @@
-# TODO: What prompts does this need to hold?
 from langchain.prompts import BasePromptTemplate
 
 

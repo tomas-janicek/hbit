@@ -17,7 +17,7 @@ def read_device_evaluation(
     device = session.scalar(statement)
 
     if not device:
-        raise errors.DoesNotExist()
+        raise errors.DoesNotExist("Provided device identifier is invalid.")
 
     statement = (
         select(models.Patch)
@@ -28,7 +28,7 @@ def read_device_evaluation(
     patch = session.scalar(statement)
 
     if not patch:
-        raise errors.DoesNotExist()
+        raise errors.DoesNotExist("Provided patch build is invalid.")
 
     device_evaluation = common_dto.DeviceEvaluationDto.from_device_and_patch(
         device, patch

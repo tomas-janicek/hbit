@@ -47,17 +47,23 @@ class PatchScraper(base.Scraper[dto.Patch]):
     def _is_wanted_patch(
         self, raw_patch: dict[str, typing.Any], version: normalizer.VersionStr
     ) -> bool:
-        # TODO: Write comment why this is important (because getting patch CVE is very lengthy)
+        """Function takes information about patch and decides
+        whether we want to scrape this patch"""
+        # scraping all version would be to hard and scraping some version is useless
+        # because when device is already un-supported, 1 missing patch makes no difference
+        if version <= self.min_version:
+            return False
+        # currently we support only ios
         if raw_patch.get("osStr", "").lower() != "ios":
             return False
+        # currently we support only major ios releases
         if raw_patch.get("beta") or raw_patch.get("rc") or raw_patch.get("rsr"):
             return False
+        # simaulator, sdk, and, internalui are never used by commercial users
         if "simulator" in raw_patch.get("version", "").lower():
             return False
         if "sdk" in raw_patch.get("version", "").lower():
             return False
         if "internalui" in raw_patch.get("version", "").lower():
-            return False
-        if version <= self.min_version:
             return False
         return True

@@ -3,6 +3,8 @@ from langchain.prompts import PromptTemplate
 from . import base, examples
 
 
+# TODO: When chat prompts work well reconsider if keeping this makes sense
+# TODO: and if yes, change text to work like chat prompting
 class GeneralPromptStore(base.PromptStore):
     device_sql_extraction = PromptTemplate.from_examples(
         examples=examples.device_sql_examples,
@@ -83,9 +85,6 @@ class GeneralPromptStore(base.PromptStore):
         )
     )
 
-    # TODO: Add structure to this summary, some points that should be returned to every device evaluation
-    # TODO: Sections like weaknesses, recommendations, strengths (security features), overall security rating (one number),
-    # TODO: most important vuls list, conclusion.
     evaluation_summary = PromptTemplate.from_template(
         template=(
             "You are expert cyber-security analyst."
@@ -126,10 +125,6 @@ class GeneralPromptStore(base.PromptStore):
         )
     )
 
-    # TODO: Give agent more context to how he should approach evaluation
-    # - ask user
-    # - gather data
-    # - ...
     agent_system_message = (
         "You are an expert cyber-security analyst. "
         "Your purpose is to request relevant information from user about what he want to analyze "
