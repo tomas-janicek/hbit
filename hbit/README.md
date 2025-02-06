@@ -1,6 +1,9 @@
 # HBIT
 
-This project is a comprehensive evaluation and extraction tool for analyzing the security status of devices, particularly focusing on iOS devices. It includes various modules for bootstrapping services, handling CLI commands, managing configurations, and evaluating device security.
+This project is a comprehensive evaluation and extraction tool for 
+analyzing the security status of devices, particularly focusing on 
+iOS devices. It includes various modules for bootstrapping services, 
+handling CLI commands, managing configurations, and evaluating device security.
 
 ## Project Structure
 
