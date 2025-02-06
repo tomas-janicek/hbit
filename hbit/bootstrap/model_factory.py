@@ -59,7 +59,7 @@ class ModelServiceFactory:
     def add_groq_models(self) -> typing.Self:
         rate_limiter = self._create_rate_limiter()
 
-        default_model_name = "llama3-70b-8192"
+        default_model_name = "llama-3.3-70b-versatile"
         default_model = ChatGroq(
             model=default_model_name,
             temperature=0,
@@ -87,7 +87,7 @@ class ModelServiceFactory:
         self.registry.register_service(types.CodeModel, code_model)
         self.registry.register_service(types.SmallModel, smaller_model)
         self.registry.register_service(types.ExtractionModel, code_model)
-        self.registry.register_service(types.AgentModel, code_model)
+        self.registry.register_service(types.AgentModel, default_model)
         return self
 
     def add_openai_models(self) -> typing.Self:
@@ -222,7 +222,7 @@ class ModelServiceFactory:
         self.registry.register_service(types.DefaultModel, default_model)
         self.registry.register_service(types.CodeModel, small_model)
         self.registry.register_service(types.SmallModel, small_model)
-        self.registry.register_service(types.ExtractionModel, default_model)
+        self.registry.register_service(types.ExtractionModel, small_model)
         self.registry.register_service(types.AgentModel, default_model)
         return self
 

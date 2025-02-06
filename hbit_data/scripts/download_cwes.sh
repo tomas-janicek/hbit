@@ -5,7 +5,7 @@ set -e
 # Variables
 URL="https://cwe.mitre.org/data/xml/cwec_latest.xml.zip"
 OUTPUT_ZIP="cwec_latest.xml.zip"
-OUTPUT_DIR="data/"
+OUTPUT_DIR="hbit_data/data/"
 
 # Download the ZIP file
 echo "Downloading file..."
@@ -31,7 +31,7 @@ else
     exit 1
 fi
 
-mv data/cwec*.xml data/cwes.xml
+mv hbit_data/data/cwec*.xml hbit_data/data/cwes.xml
 
 # Cleanup
 echo "Cleaning up..."

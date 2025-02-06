@@ -79,10 +79,15 @@ def get_device_identifier(
     ],
     config: RunnableConfig,
 ) -> str | None:
-    """Input to this function is text from user's question talking about his device.
-    Use this tool if you need device identifier of device user mentioned and you
-    can not identify it. If no device was found, an error will be raised. If so,
-    ask user to provide more information about his device.
+    """This tool requires input text from the user that mentions a device.
+    - Before using this tool, ensure the user has provided details about their device.
+    - If the user has not mentioned a device, ask them to specify which device they are referring to before proceeding.
+
+    Use this tool only if:
+    1. The user's question contains text about a device, but you cannot determine the device identifier.
+    2. You need to extract the device identifier from the provided text.
+
+    If no device identifier is found, prompt the user to provide more details about their device before retrying.
     Example text: How secure is an iPhone XS?
     Example output: iphone11,2"""
     registry = _get_registry_from_config(config)
@@ -106,10 +111,15 @@ def get_patch_build(
     ],
     config: RunnableConfig,
 ) -> str | None:
-    """Input to this function is text from user's question talking about his patch.
-    Use this tool if you need patch build user mentioned and you
-    can not identify it. If no patch was found, an error will be raised. If so,
-    ask user to provide more information about patch his device has installed.
+    """This tool requires input text from the user that mentions a patch.
+    - Before using this tool, ensure the user has provided details about the patch installed on their device.
+    - If the user has not mentioned a patch, ask them to specify which patch they are referring to before proceeding.
+
+    Use this tool only if:
+    1. The user's question contains text about a patch, but you cannot determine the patch build.
+    2. You need to extract the patch build information from the provided text.
+
+    If no patch build is found, prompt the user to provide more details about the patch installed on their device before retrying.
     Example text: How secure is my iPhone 13 Pro if I have patch 18.1.0 installed?
     Example output: 22b83"""
     registry = _get_registry_from_config(config)

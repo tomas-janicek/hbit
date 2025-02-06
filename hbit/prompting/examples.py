@@ -51,7 +51,7 @@ device_sql_few_shot_examples = [
         "output": f"{{{dto.QueryOutput(query='').model_dump_json()}}}",
     },
     {
-        # NOTE: Anthropic model fails on message with jus white-spaces# TODO: Could this cause error for anthropic model?
+        # NOTE: Anthropic model fails on message with jus white-spaces
         "input": ".",
         "output": f"{{{dto.QueryOutput(query='').model_dump_json()}}}",
     },

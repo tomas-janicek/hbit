@@ -5,7 +5,7 @@ set -e
 # Variables
 URL="https://capec.mitre.org/data/archive/capec_latest.zip"
 OUTPUT_ZIP="capec_latest.zip"
-OUTPUT_DIR="data/"
+OUTPUT_DIR="hbit_data/data/"
 
 # Download the ZIP file
 echo "Downloading file..."
@@ -31,8 +31,8 @@ else
     exit 1
 fi
 
-rm data/ap_schema*.xsd
-mv data/capec*.xml data/capecs.xml
+rm hbit_data/data/ap_schema*.xsd
+mv hbit_data/data/capec_*.xml hbit_data/data/capecs.xml
 
 # Cleanup
 echo "Cleaning up..."
