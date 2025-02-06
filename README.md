@@ -70,7 +70,8 @@ uvicorn hbit_api.api.main:api_router --reload
 
 ### Running the Scrapers
 
-> [!warning]: Running scrapers requires having HBIT API running.
+> [!WARNING]
+> Running scrapers requires having HBIT API running.
 
 You can ran all scrapers in correct order calling bash script:
 
