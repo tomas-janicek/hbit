@@ -7,7 +7,14 @@ bash hbit_data/scripts/download_cwes.sh
 
 export PYTHONPATH=. 
 
-python hbit_data/cli.py scrape_cwes
-python hbit_data/cli.py scrape_capecs
-python hbit_data/cli.py scrape_security_updates
-python hbit_data/cli.py scrape_iphones
+echo "Scrape CWEs"
+uv run hbit_data/cli.py scrape_cwes
+
+echo "Scrape CAPECs"
+uv run hbit_data/cli.py scrape_capecs
+
+echo "Scrape Security Updates"
+uv run hbit_data/cli.py scrape_security_updates
+
+echo "Scrape Security iPhones"
+uv run hbit_data/cli.py scrape_iphones

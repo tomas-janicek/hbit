@@ -2,6 +2,7 @@ import os
 from logging.config import fileConfig
 
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy import URL, engine_from_config, pool
 
 # this is the Alembic Config object, which provides
@@ -29,6 +30,7 @@ target_metadata = metadata
 
 
 def get_url() -> str:
+    load_dotenv()
     db_url = URL.create(
         drivername=os.getenv("DB_SCHEMA"),  # type: ignore
         username=os.getenv("DB_USER"),

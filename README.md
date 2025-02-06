@@ -9,6 +9,9 @@ and functionality.
 
 ### 1. Scrapers
 
+> [!TIP]
+> More on scrapers in hbit_data/README.md file!
+
 The scrapers gather data from various sources and store it in a structured format. The main scrapers include:
 
 - **Security Updates Scraper**: Collects security updates.
@@ -17,9 +20,12 @@ The scrapers gather data from various sources and store it in a structured forma
 - **CAPECs Scraper**: Collects Common Attack Pattern Enumeration and Classification.
 - **Patches Scraper**: Collects patch information.
 
-### 2. Web API
+### 2. REST API
 
-The web API provides access to the collected data. It is built using FastAPI and includes endpoints for:
+> [!TIP]
+> More on REST API in hbit_api/README.md file!
+
+The REST API provides access to the collected data. It is built using FastAPI and includes endpoints for:
 
 - **Login**: User authentication.
 - **Users**: User management.
@@ -28,6 +34,9 @@ The web API provides access to the collected data. It is built using FastAPI and
 - **Evaluations**: Security evaluations of devices and patches.
 
 ### 3. AI UI
+
+> [!TIP]
+> More on AI, agents and their UI in hbit/README.md file!
 
 TBD
 
@@ -83,12 +92,12 @@ To run individual the scrapers, use the CLI commands provided in `hbit_data/cli.
 For example, to scrape security updates:
 
 ```sh
-PYTHONPATH=. python hbit_data/cli.py scrape_security_updates
+PYTHONPATH=. uv run hbit_data/cli.py scrape_security_updates
 ```
 
 ### Streamlit AI UI
 
 To use the CLI application, run:
 ```sh
-PYTHONPATH=. python -m streamlit run hbit/ui/security_agent.py
+PYTHONPATH=. uv run streamlit run hbit/ui/security_agent.py
 ```

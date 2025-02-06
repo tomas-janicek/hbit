@@ -55,7 +55,7 @@ def update_configuration() -> None:
         or enums.PatchEvaluationType.AI,
         summary_service_type=enums.SummaryServiceType.AI,
         model_provider=st.session_state.get("model_provider")
-        or enums.ModelProvider.TOGETHER_AI,
+        or enums.ModelProvider.OPEN_AI,
     )
     agent_evaluator = endpoints.AgentDeviceEvaluator(registry)
     agent_graph = agent_evaluator.agent_executor
@@ -75,7 +75,7 @@ with st.sidebar:
         list(enums.ModelProvider),
         selection_mode="single",
         key="model_provider",
-        default=enums.ModelProvider.TOGETHER_AI,
+        default=enums.ModelProvider.OPEN_AI,
         on_change=update_configuration,
     )
     device_extractor = st.pills(

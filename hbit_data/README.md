@@ -199,11 +199,11 @@ bash hbit_data/scripts/download_cwes.sh
 Run scrapers:
 
 ```sh
-PYTHONPATH=. python hbit_data/cli.py scrape_cwes
-PYTHONPATH=. python hbit_data/cli.py scrape_capecs
-PYTHONPATH=. python hbit_data/cli.py scrape_patches
-PYTHONPATH=. python hbit_data/cli.py scrape_security_updates
-PYTHONPATH=. python hbit_data/cli.py scrape_iphones
+PYTHONPATH=. uv run hbit_data/cli.py scrape_cwes
+PYTHONPATH=. uv run hbit_data/cli.py scrape_capecs
+PYTHONPATH=. uv run hbit_data/cli.py scrape_patches
+PYTHONPATH=. uv run hbit_data/cli.py scrape_security_updates
+PYTHONPATH=. uv run hbit_data/cli.py scrape_iphones
 ```
 
 
