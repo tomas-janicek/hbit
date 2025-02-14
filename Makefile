@@ -1,4 +1,4 @@
-.PHONY: make-migrations migrate init_db format lint
+.PHONY: make-migrations migrate init_db format lint detect-secrets
 
 make-migrations:
 	PYTHONPATH=. uv run alembic revision --autogenerate -m $(m)
@@ -14,3 +14,6 @@ format:
 
 lint: 
 	ruff check --fix
+
+detect-secrets:
+	ggshield secret scan repo .

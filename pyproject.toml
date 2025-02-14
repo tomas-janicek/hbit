@@ -54,7 +54,12 @@ dependencies = [
 ]
 
 [tool.uv]
-dev-dependencies = ["ipykernel>=6.29.5", "pytest>=8.3.3", "ruff>=0.7.1"]
+dev-dependencies = [
+    "ggshield>=1.36.0",
+    "ipykernel>=6.29.5",
+    "pytest>=8.3.3",
+    "ruff>=0.7.1",
+]
 
 #########################################
 # Linting and Formatting Configurations #

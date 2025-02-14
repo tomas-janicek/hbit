@@ -47,6 +47,7 @@ The REST API provides access to the collected data. It is built using *FastAPI* 
 > Running *Streamlit UI* requires having *HBIT API* running.
 
 To use the CLI application, run:
+
 ```sh
 PYTHONPATH=. uv run streamlit run hbit/ui/security_agent.py
 ```
@@ -54,7 +55,12 @@ PYTHONPATH=. uv run streamlit run hbit/ui/security_agent.py
 > [!TIP]
 > More on AI, agents and their UI in `hbit/README.md` file!
 
-*TBD*
+TBD
+
+## 🚀 Next Steps
+
+- **Add More Scrapers**: Include additional scrapers to gather more data.
+- **Add Email Security Information**: Maybe for this case I can use some retriever from HIBP and save data using scrapers.
 
 ## 🚀 Installation
 
@@ -110,6 +116,7 @@ PYTHONPATH=. uv run hbit_data/cli.py scrape_security_updates
 > Running *Streamlit UI* requires having *HBIT API* running.
 
 To use the CLI application, run:
+
 ```sh
 PYTHONPATH=. uv run streamlit run hbit/ui/security_agent.py
 ```
