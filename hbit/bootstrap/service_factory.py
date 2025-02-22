@@ -7,7 +7,6 @@ from hbit import (
     clients,
     core,
     enums,
-    evaluations,
     extractors,
     prompting,
     services,
@@ -16,7 +15,6 @@ from hbit import (
     types,
     utils,
 )
-from hbit.evaluations import device_evaluations, patch_evaluations
 from hbit.extractors import device_extractors, patch_extractors
 from hbit.prompting import chat_prompting, general_prompting
 
@@ -95,50 +93,6 @@ class ServicesFactory:
                 )
 
         self.registry.register_service(extractors.PatchExtractor, patch_extractor)
-        return self
-
-    def add_device_evaluation_service(
-        self, type: enums.DeviceEvaluationType
-    ) -> typing.Self:
-        client = self.registry.get_service(clients.HBITClient)
-
-        match type:
-            case enums.DeviceEvaluationType.IMPERATIVE:
-                evaluation_service = device_evaluations.IterativeEvaluationService(
-                    client
-                )
-            case enums.DeviceEvaluationType.AI:
-                code_model = self.registry.get_service(types.CodeModel)
-                prompt_store = self.registry.get_service(prompting.PromptStore)
-                evaluation_service = device_evaluations.AiDeviceEvaluationService(
-                    code_model, prompt_store, client
-                )
-
-        self.registry.register_service(
-            evaluations.DeviceEvaluationService, evaluation_service
-        )
-        return self
-
-    def add_patch_evaluation_service(
-        self, type: enums.PatchEvaluationType
-    ) -> typing.Self:
-        client = self.registry.get_service(clients.HBITClient)
-
-        match type:
-            case enums.PatchEvaluationType.IMPERATIVE:
-                evaluation_service = patch_evaluations.IterativePatchEvaluationService(
-                    client
-                )
-            case enums.PatchEvaluationType.AI:
-                code_model = self.registry.get_service(types.CodeModel)
-                prompt_store = self.registry.get_service(prompting.PromptStore)
-                evaluation_service = patch_evaluations.AiPatchEvaluationService(
-                    code_model, prompt_store, client
-                )
-
-        self.registry.register_service(
-            evaluations.PatchEvaluationService, evaluation_service
-        )
         return self
 
     def add_summary_service(self, type: enums.SummaryServiceType) -> typing.Self:

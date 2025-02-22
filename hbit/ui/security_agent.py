@@ -40,6 +40,7 @@ for msg in st.session_state.messages:
 ###################
 
 
+# TODO: Add description to the sidebar configurations
 def update_configuration() -> None:
     # reset chat on every model change
     st.session_state["messages"] = [AIMessage(content="How can I help you?")]
@@ -49,10 +50,6 @@ def update_configuration() -> None:
         or enums.DeviceExtractorType.JSON,
         patch_extractor_type=st.session_state.get("patch_extractor_type")
         or enums.PatchExtractorType.JSON,
-        device_evaluation_type=st.session_state.get("device_evaluation_type")
-        or enums.DeviceEvaluationType.AI,
-        patch_evaluation_type=st.session_state.get("patch_evaluation_type")
-        or enums.PatchEvaluationType.AI,
         summary_service_type=enums.SummaryServiceType.AI,
         model_provider=st.session_state.get("model_provider")
         or enums.ModelProvider.OPEN_AI,
@@ -92,22 +89,6 @@ with st.sidebar:
         selection_mode="single",
         key="patch_extractor_type",
         default=enums.PatchExtractorType.JSON,
-        on_change=update_configuration,
-    )
-    device_evaluation = st.pills(
-        "Device Evaluation",
-        list(enums.DeviceEvaluationType),
-        selection_mode="single",
-        key="device_evaluation_type",
-        default=enums.DeviceEvaluationType.AI,
-        on_change=update_configuration,
-    )
-    patch_evaluation = st.pills(
-        "Patch Evaluation",
-        list(enums.PatchEvaluationType),
-        selection_mode="single",
-        key="patch_evaluation_type",
-        default=enums.PatchEvaluationType.AI,
         on_change=update_configuration,
     )
 

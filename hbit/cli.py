@@ -10,8 +10,6 @@ def get_agent_evaluation(question: str) -> None:
     registry = bootstrap.create_services(
         device_extractor_type=enums.DeviceExtractorType.SQL,
         patch_extractor_type=enums.PatchExtractorType.SQL,
-        device_evaluation_type=enums.DeviceEvaluationType.AI,
-        patch_evaluation_type=enums.PatchEvaluationType.AI,
         summary_service_type=enums.SummaryServiceType.AI,
     )
     agent_evaluator = endpoints.AgentDeviceEvaluator(registry=registry)
@@ -25,8 +23,6 @@ def get_chain_evaluation(question: str) -> None:
     registry = bootstrap.create_services(
         device_extractor_type=enums.DeviceExtractorType.JSON,
         patch_extractor_type=enums.PatchExtractorType.JSON,
-        device_evaluation_type=enums.DeviceEvaluationType.IMPERATIVE,
-        patch_evaluation_type=enums.PatchEvaluationType.IMPERATIVE,
         summary_service_type=enums.SummaryServiceType.AI,
     )
     chain_evaluator = endpoints.ChainDeviceEvaluator(registry=registry)
@@ -40,8 +36,6 @@ def get_structured_evaluation(question: str) -> None:
     registry = bootstrap.create_services(
         device_extractor_type=enums.DeviceExtractorType.JSON,
         patch_extractor_type=enums.PatchExtractorType.JSON,
-        device_evaluation_type=enums.DeviceEvaluationType.IMPERATIVE,
-        patch_evaluation_type=enums.PatchEvaluationType.IMPERATIVE,
         summary_service_type=enums.SummaryServiceType.AI,
     )
     agent_evaluator = endpoints.ImperativeEvaluator(registry=registry)
@@ -55,8 +49,6 @@ def get_sql_evaluation(question: str) -> None:
     registry = bootstrap.create_services(
         device_extractor_type=enums.DeviceExtractorType.SQL,
         patch_extractor_type=enums.PatchExtractorType.SQL,
-        device_evaluation_type=enums.DeviceEvaluationType.AI,
-        patch_evaluation_type=enums.PatchEvaluationType.AI,
         summary_service_type=enums.SummaryServiceType.AI,
     )
     agent_evaluator = endpoints.ImperativeEvaluator(registry=registry)
@@ -70,8 +62,6 @@ def save_graph_photos() -> None:
     registry = bootstrap.create_services(
         device_extractor_type=enums.DeviceExtractorType.SQL,
         patch_extractor_type=enums.PatchExtractorType.SQL,
-        device_evaluation_type=enums.DeviceEvaluationType.AI,
-        patch_evaluation_type=enums.PatchEvaluationType.AI,
         summary_service_type=enums.SummaryServiceType.AI,
     )
     agent_evaluator = endpoints.ChainDeviceEvaluator(registry=registry)

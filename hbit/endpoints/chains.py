@@ -4,7 +4,7 @@ import typing
 from langgraph.func import START  # type: ignore
 from langgraph.graph import StateGraph  # type: ignore
 
-from hbit import dto, evaluations, extractors, services, summaries, types
+from hbit import clients, dto, extractors, services, summaries, types
 
 
 class ChainDeviceEvaluator:
@@ -59,10 +59,8 @@ class ChainDeviceEvaluator:
         self, state: dto.ChainStateSchema
     ) -> dict[str, typing.Any]:
         """Get the evaluation of a device."""
-        evaluation_service = self.registry.get_service(
-            evaluations.DeviceEvaluationService
-        )
-        evaluation = evaluation_service.get_trimmed_evaluation(
+        client = self.registry.get_service(clients.HBITClient)
+        evaluation = client.get_device_evaluation(
             device_identifier=state["device_identifier"],
             patch_build=state["patch_build"],
         )

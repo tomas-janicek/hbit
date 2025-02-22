@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool  # type: ignore
 from langchain_core.tools.base import BaseTool
 
-from hbit import evaluations, extractors, services, summaries
+from hbit import clients, extractors, services, summaries
 
 
 @tool
@@ -27,14 +27,12 @@ def get_device_evaluation(
     Example device identifier: 'iphone7,2', 'iphone9,4', 'iphone17,3'.
     Example patch build: '22b83', '21g93', '20h240', '19h370', '19b74'."""
     registry = _get_registry_from_config(config)
-    evaluation_service = registry.get_service(evaluations.DeviceEvaluationService)
+    client = registry.get_service(clients.HBITClient)
     summary_service = registry.get_service(summaries.SummaryService)
 
     try:
-        evaluation = evaluation_service.get_full_evaluation(
-            device_identifier, patch_build
-        )
-        summary = summary_service.generate_summary(evaluation=evaluation)
+        evaluation = client.get_device_evaluation(device_identifier, patch_build)
+        summary = summary_service.generate_summary(evaluation)
         return summary
     except httpx.HTTPStatusError as error:
         detail = error.response.json().get("detail", "")
@@ -60,12 +58,12 @@ def get_patch_evaluation(
     generate_evaluation_summary tool.
     Example patch build: '22b83', '21g93', '20h240', '19h370', '19b74'."""
     registry = _get_registry_from_config(config)
-    evaluation_service = registry.get_service(evaluations.PatchEvaluationService)
+    client = registry.get_service(clients.HBITClient)
     summary_service = registry.get_service(summaries.SummaryService)
 
     try:
-        evaluation = evaluation_service.get_full_evaluation(patch_build)
-        summary = summary_service.generate_summary(evaluation=evaluation)
+        evaluation = client.get_patch_evaluation(patch_build)
+        summary = summary_service.generate_summary(evaluation)
         return summary
     except httpx.HTTPStatusError as error:
         detail = error.response.json().get("detail", "")

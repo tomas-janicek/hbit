@@ -10,8 +10,6 @@ from .service_factory import ServicesFactory
 def create_services(
     device_extractor_type: enums.DeviceExtractorType,
     patch_extractor_type: enums.PatchExtractorType,
-    device_evaluation_type: enums.DeviceEvaluationType,
-    patch_evaluation_type: enums.PatchEvaluationType,
     summary_service_type: enums.SummaryServiceType,
     model_provider: enums.ModelProvider = enums.ModelProvider.OPEN_AI,
 ) -> services.ServiceContainer:
@@ -27,8 +25,6 @@ def create_services(
     service_factory.add_saver()
     service_factory.add_device_extractor(device_extractor_type)
     service_factory.add_patch_extractor(patch_extractor_type)
-    service_factory.add_device_evaluation_service(device_evaluation_type)
-    service_factory.add_patch_evaluation_service(patch_evaluation_type)
     service_factory.add_summary_service(summary_service_type)
 
     return registry
