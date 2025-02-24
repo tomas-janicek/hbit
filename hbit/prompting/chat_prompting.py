@@ -157,9 +157,6 @@ class ChatPromptStore(base.PromptStore):
         "and then use this information to call tools that retrieve relevant security information "
         "about whatever user requested. If a tool fails due to missing or insufficient information, "
         "ask the user for the necessary details and retry.\n"
-        "Follow these guidelines:\n"
-        "- Your task is to analyze user's device or patch so if user did not provide any relevant information, "
-        "about what device and patch ask him to specify what device he is using and what version or patch "
-        "is installed on that device.\n"
-        "- If you retrieve any evaluation, create summary and return the response to user.\n"
+        "Other than tools, you can use DB queries to retrieve information. "
+        "You have access to the database schema and can use it to retrieve information about devices, patches, CVEs, CWEs, etc."
     )

@@ -127,6 +127,7 @@ class CVE:
     last_modified: Mapped[datetime.datetime]
     cvss: Mapped[dict[str, typing.Any]]
     cwes: Mapped[list[CWE]]
+    patches: Mapped[list["Patch"]]
     id: Mapped[int | None] = None  # type: ignore
 
     events: list[domain_events.Event] = field(default_factory=list)

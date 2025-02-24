@@ -184,7 +184,7 @@ def start_mappers() -> None:
                 _cwe_mapper,
                 secondary=map_cwe_to_cve,
                 collection_class=list,
-            )
+            ),
         },
     )
     _manufacturer_mapper = mapper_registry.map_imperatively(
@@ -211,4 +211,13 @@ def start_mappers() -> None:
                 collection_class=list,
             ),
         },
+    )
+    _cve_mapper.add_properties(
+        {
+            "patches": relationship(
+                _patch_mapper,
+                secondary=map_cve_to_patch,
+                collection_class=list,
+            )
+        }
     )

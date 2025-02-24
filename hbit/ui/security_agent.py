@@ -47,9 +47,9 @@ def update_configuration() -> None:
 
     registry = bootstrap.create_services(
         device_extractor_type=st.session_state.get("device_extractor_type")
-        or enums.DeviceExtractorType.JSON,
+        or enums.DeviceExtractorType.SQL,
         patch_extractor_type=st.session_state.get("patch_extractor_type")
-        or enums.PatchExtractorType.JSON,
+        or enums.PatchExtractorType.SQL,
         summary_service_type=enums.SummaryServiceType.AI,
         model_provider=st.session_state.get("model_provider")
         or enums.ModelProvider.OPEN_AI,
@@ -80,7 +80,7 @@ with st.sidebar:
         list(enums.DeviceExtractorType),
         selection_mode="single",
         key="device_extractor_type",
-        default=enums.DeviceExtractorType.JSON,
+        default=enums.DeviceExtractorType.SQL,
         on_change=update_configuration,
     )
     patch_extractor = st.pills(
@@ -88,7 +88,7 @@ with st.sidebar:
         list(enums.PatchExtractorType),
         selection_mode="single",
         key="patch_extractor_type",
-        default=enums.PatchExtractorType.JSON,
+        default=enums.PatchExtractorType.SQL,
         on_change=update_configuration,
     )
 

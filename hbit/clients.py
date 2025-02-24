@@ -12,6 +12,8 @@ class HBITClient:
         self, patch_build: str
     ) -> common_dto.PatchEvaluationDto: ...
 
+    def get_cves(self, patch_build: str | None = None) -> common_dto.CVEsDto: ...
+
 
 class ApiHBITClient(HBITClient):
     def __init__(self, request: requests.Requests, hbit_api_url: str) -> None:
@@ -37,3 +39,13 @@ class ApiHBITClient(HBITClient):
             timeout=settings.DEFAULT_TIMEOUT,
         )
         return evaluation
+
+    def get_cves(self, patch_build: str | None = None) -> common_dto.CVEsDto:
+        cves = self.request.get(
+            base=self.hbit_api_url,
+            path=f"cves?patch_build={patch_build}",
+            response_type=common_dto.CVEsDto,
+            timeout=settings.DEFAULT_TIMEOUT,
+            params={"patch_build": patch_build},
+        )
+        return cves

@@ -15,7 +15,7 @@ router = APIRouter()
 )
 def read_device_evaluation(
     services: svcs.fastapi.DepContainer,
-    super_user: deps.CurrentSuperUser,
+    super_user: deps.CurrentUser,
     device_identifier: str,
     patch_build: str,
 ) -> common_dto.DeviceEvaluationDto:
@@ -42,7 +42,7 @@ def read_device_evaluation(
 )
 def read_patch_evaluation(
     services: svcs.fastapi.DepContainer,
-    super_user: deps.CurrentSuperUser,
+    super_user: deps.CurrentUser,
     patch_build: str,
 ) -> common_dto.PatchEvaluationDto:
     """

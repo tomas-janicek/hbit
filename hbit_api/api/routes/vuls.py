@@ -91,7 +91,7 @@ def create_patch_batch(
 )
 def read_cwes(
     services: svcs.fastapi.DepContainer,
-    super_user: deps.CurrentSuperUser,
+    super_user: deps.CurrentUser,
     skip: int = 0,
     limit: int = 100,
 ) -> dto.CWEsDto:
@@ -101,3 +101,22 @@ def read_cwes(
     session = services.get(Session)
 
     return views.read_cwes(session, skip, limit)
+
+
+@router.get(
+    "/cves",
+    response_model=dto.CVEsDto,
+)
+def read_cves(
+    services: svcs.fastapi.DepContainer,
+    super_user: deps.CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
+    patch_build: str | None = None,
+) -> dto.CVEsDto:
+    """
+    Retrieve CVEs.
+    """
+    session = services.get(Session)
+
+    return views.read_cves(session, patch_build, skip, limit)

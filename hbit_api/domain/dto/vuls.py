@@ -27,6 +27,23 @@ class CVEDto(BaseModel):
     cvss: CVSSDto
     cwe_ids: list[int]
 
+    @classmethod
+    def from_cve(cls, cve: "models.CVE") -> typing.Self:
+        return cls(
+            cve_id=cve.cve_id,
+            description=cve.description,
+            published=cve.published,
+            last_modified=cve.last_modified,
+            cvss=cve.cvss,  # type: ignore
+            # TODO: Make sure this is pre-fetched
+            cwe_ids=[cwe.cwe_id for cwe in cve.cwes],
+        )
+
+
+class CVEsDto(BaseModel):
+    data: list[CVEDto]
+    count: int
+
 
 class PatchDto(BaseModel):
     os: str
