@@ -162,7 +162,7 @@ device_json_few_shot_examples = [
     },
 ]
 
-# TODO: Have the same number of examples here as i have in JSON examples
+
 patch_sql_examples = [
     "Input: How secure is my iPhone 13 Pro patch if I have patch 18.0.1 installed identified by build 22B83.\n"
     "Output: SELECT build FROM patches WHERE build LIKE '22B83' AND version LIKE '%18.0.1%'",

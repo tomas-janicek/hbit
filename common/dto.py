@@ -209,19 +209,19 @@ class DeviceEvaluationDto(BaseModel):
             device=DeviceDto.from_device(device),
             patch=PatchDto.from_patch(patch),
             # include only cves with high score
-            vulnerabilities=[
-                VulnerabilityDto.from_cve(cve)
-                for cve in patch.cves
-                if cve.cvss["score"] > 7.0
-            ],
+            vulnerabilities=[VulnerabilityDto.from_cve(cve) for cve in patch.cves],
         )
 
     def get_chunked_by_n_tokens(
-        self, n_max_tokens: int
+        self, n_max_tokens: int, n_summaries_limit: int
     ) -> typing.Iterator["DeviceEvaluationDto"]:
         n_prepared_tokens = 0
         chunked_vuls: list[VulnerabilityDto] = []
+        iterations = 0
+
         for vul in self.vulnerabilities:
+            if iterations >= n_summaries_limit:
+                break
             if vul.n_json_tokens > n_max_tokens:
                 _log.warning(
                     "Vulnerability with ID %s can't be summarized because it is too big (it has %s tokens).",
@@ -236,9 +236,17 @@ class DeviceEvaluationDto(BaseModel):
                 )
                 n_prepared_tokens = vul.n_json_tokens
                 chunked_vuls = [vul]
+                iterations += 1
             else:
                 n_prepared_tokens += vul.n_json_tokens
                 chunked_vuls.append(vul)
+
+        if chunked_vuls:
+            yield DeviceEvaluationDto(
+                device=self.device,
+                patch=self.patch,
+                vulnerabilities=chunked_vuls,
+            )
 
 
 class PatchEvaluationDto(BaseModel):
@@ -250,19 +258,19 @@ class PatchEvaluationDto(BaseModel):
         return cls(
             patch=PatchDto.from_patch(patch),
             # include only cves with high score
-            vulnerabilities=[
-                VulnerabilityDto.from_cve(cve)
-                for cve in patch.cves
-                if cve.cvss["score"] > 7.0
-            ],
+            vulnerabilities=[VulnerabilityDto.from_cve(cve) for cve in patch.cves],
         )
 
     def get_chunked_by_n_tokens(
-        self, n_max_tokens: int
+        self, n_max_tokens: int, n_summaries_limit: int
     ) -> typing.Iterator["PatchEvaluationDto"]:
         n_prepared_tokens = 0
         chunked_vuls: list[VulnerabilityDto] = []
+        iterations = 0
+
         for vul in self.vulnerabilities:
+            if iterations >= n_summaries_limit:
+                break
             if vul.n_json_tokens > n_max_tokens:
                 _log.warning(
                     "Vulnerability with ID %s can't be summarized because it is too big (it has %s tokens).",
@@ -276,6 +284,7 @@ class PatchEvaluationDto(BaseModel):
                 )
                 n_prepared_tokens = vul.n_json_tokens
                 chunked_vuls = [vul]
+                iterations += 1
             else:
                 n_prepared_tokens += vul.n_json_tokens
                 chunked_vuls.append(vul)

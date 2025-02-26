@@ -33,3 +33,11 @@ class ModelProvider(enum.StrEnum):
     MISTRAL = "Mistral"
     TOGETHER_AI = "Together AI"
     NVIDIA = "NVIDIA"
+
+
+class GraphAction(enum.StrEnum):
+    DEVICE_EXTRACTION = "device_extraction"
+    PATCH_EXTRACTION = "patch_extraction"
+    DEVICE_EVALUATION = "device_evaluation"
+    PATCH_EVALUATION = "patch_evaluation"
+    RESPOND = "respond_to_user"

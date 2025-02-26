@@ -6,6 +6,7 @@ from langgraph.graph import add_messages  # type: ignore
 from langgraph.managed import IsLastStep, RemainingSteps  # type: ignore
 
 from common import dto as common_dto
+from hbit import enums
 
 ######################
 # Structured Outputs #
@@ -40,6 +41,32 @@ class Patch(pydantic.BaseModel):
     )
 
 
+class ExtractionText(pydantic.BaseModel):
+    text: str = pydantic.Field(
+        description="Text required for extraction of device or patch information. Must be string provided by user."
+    )
+
+
+class DeviceEvaluationParameters(pydantic.BaseModel):
+    device_identifier: str = pydantic.Field(
+        description="Unique identifier of the device in format similar to 'iphone14,2'"
+    )
+    patch_build: str = pydantic.Field(
+        description="Unique build of the patch in format similar to '22B83'"
+    )
+
+
+class PatchEvaluationParameters(pydantic.BaseModel):
+    patch_build: str = pydantic.Field(
+        description="Unique build of the patch in format similar to '22B83'"
+    )
+
+
+class GraphRouterResponse(pydantic.BaseModel):
+    action: enums.GraphAction
+    data: ExtractionText | DeviceEvaluationParameters | PatchEvaluationParameters | None
+
+
 #################
 # State Schemas #
 #################
@@ -54,21 +81,35 @@ class AgentStateSchema(typing.TypedDict):
     remaining_steps: RemainingSteps
 
 
-class EvaluationStateSchema(typing.TypedDict):
+class GraphStateSchema(typing.TypedDict):
     messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
-
-    evaluation: common_dto.EvaluationDto | None
-
-
-class QuestionStateSchema(typing.TypedDict):
-    messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
+    device_identifiers: str
+    patch_builds: str
+    evaluation: common_dto.EvaluationDto
+    summaries: list[str]
 
 
-class ChainStateSchema(typing.TypedDict):
-    messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
+class ExtractionType(typing.TypedDict):
+    messages: typing.Sequence[BaseMessage]
+    extraction_type: typing.Literal["device", "patch"]
 
-    question: str
+
+class ExtractionSchema(typing.TypedDict):
+    text: str
+
+
+class DeviceExtractionSchema(ExtractionSchema):
+    pass
+
+
+class PatchExtractionSchema(ExtractionSchema):
+    pass
+
+
+class PatchEvaluationSchema(typing.TypedDict):
+    patch_build: str
+
+
+class DeviceEvaluationSchema(typing.TypedDict):
     device_identifier: str
     patch_build: str
-    device_evaluation: common_dto.DeviceEvaluationDto
-    device_summary: str

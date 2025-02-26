@@ -10,9 +10,9 @@ class ImperativeEvaluator:
         self.patch_extractor = registry.get_service(extractors.PatchExtractor)
         self.client = registry.get_service(clients.HBITClient)
 
-    def get_device_security_answer(self, question: str) -> str:
-        device_identifier = self.device_extractor.extract_device_identifier(question)
-        patch_build = self.patch_extractor.extract_patch_build(question)
+    def get_device_security_answer(self, input: str) -> str:
+        device_identifier = self.device_extractor.extract_device_identifier(input)
+        patch_build = self.patch_extractor.extract_patch_build(input)
 
         if not patch_build:
             raise ValueError(

@@ -22,6 +22,23 @@
             "justMyCode": false,
         },
         {
+            "name": "Streamlit UI: Graph",
+            "consoleTitle": "Streamlit UI: Graph",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "hbit/ui/security_graph.py",
+                "--server.fileWatcherType=auto",
+                "--server.runOnSave=true",
+            ],
+            "cwd": "${workspaceFolder}",
+            "jinja": true,
+            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": false,
+        },
+        {
             "name": "Agent Device Evaluator",
             "consoleTitle": "Agent Device Evaluator",
             "type": "debugpy",
@@ -39,8 +56,8 @@
             "envFile": "${workspaceFolder}/.env",
         },
         {
-            "name": "Chain Device Evaluator",
-            "consoleTitle": "Chain Device Evaluator",
+            "name": "Graph Device Evaluator",
+            "consoleTitle": "Graph Device Evaluator",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceRoot}/hbit/cli.py",
@@ -48,7 +65,7 @@
                 "PYTHONPATH": "."
             },
             "args": [
-                "get_chain_evaluation",
+                "get_graph_evaluation",
                 "How security is my iPhone 13 Pro device if I have patch 18.1.0 installed identified by build 22B83."
             ],
             "justMyCode": false,

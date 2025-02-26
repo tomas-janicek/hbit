@@ -1,5 +1,5 @@
 from .agents import AgentDeviceEvaluator
-from .chains import ChainDeviceEvaluator
+from .graphs import GraphDeviceEvaluator
 from .sequences import ImperativeEvaluator
 
-__all__ = ["AgentDeviceEvaluator", "ChainDeviceEvaluator", "ImperativeEvaluator"]
+__all__ = ["AgentDeviceEvaluator", "GraphDeviceEvaluator", "ImperativeEvaluator"]

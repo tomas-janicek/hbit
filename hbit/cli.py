@@ -18,15 +18,15 @@ def get_agent_evaluation(question: str) -> None:
     _print_response(response)
 
 
-@cli.command(name="get_chain_evaluation")
-def get_chain_evaluation(question: str) -> None:
+@cli.command(name="get_graph_evaluation")
+def get_graph_evaluation(question: str) -> None:
     registry = bootstrap.create_services(
         device_extractor_type=enums.DeviceExtractorType.JSON,
         patch_extractor_type=enums.PatchExtractorType.JSON,
         summary_service_type=enums.SummaryServiceType.AI,
     )
-    chain_evaluator = endpoints.ChainDeviceEvaluator(registry=registry)
-    response = chain_evaluator.get_device_security_answer(question, print_steps=True)
+    graph_evaluator = endpoints.GraphDeviceEvaluator(registry=registry)
+    response = graph_evaluator.get_device_security_answer(question, print_steps=True)
 
     _print_response(response)
 
@@ -64,8 +64,11 @@ def save_graph_photos() -> None:
         patch_extractor_type=enums.PatchExtractorType.SQL,
         summary_service_type=enums.SummaryServiceType.AI,
     )
-    agent_evaluator = endpoints.ChainDeviceEvaluator(registry=registry)
-    agent_evaluator.save_graph_image(settings.STATIC_DIR / "chain-graph.png")
+    graph_evaluator = endpoints.GraphDeviceEvaluator(registry=registry)
+    graph_evaluator.save_graph_image(settings.STATIC_DIR / "graph-evaluator.png")
+
+    agent_evaluator = endpoints.AgentDeviceEvaluator(registry=registry)
+    agent_evaluator.save_graph_image(settings.STATIC_DIR / "agent-evaluator.png")
 
 
 def _print_response(response: str) -> None:

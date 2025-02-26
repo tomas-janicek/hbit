@@ -75,11 +75,9 @@ class GeneralPromptStore(base.PromptStore):
 
     evaluation_part_summary = PromptTemplate.from_template(
         template=(
-            "Given the following user question, and evaluation, "
-            "answer the user question, create summary of given evaluation. "
+            "Create summary of given evaluation. "
             "Bare in mind this summary will then be used with other summaries "
             "generated similar way.\n\n"
-            "Question: {text}\n"
             "Evaluation Part:\n"
             "{evaluation_chunk}"
         )
@@ -88,9 +86,7 @@ class GeneralPromptStore(base.PromptStore):
     evaluation_summary = PromptTemplate.from_template(
         template=(
             "You are expert cyber-security analyst."
-            "Given the following user's question, and summaries for different security "
-            "evaluations generate analysis to user's question.\n\n"
-            "Question: {text}\n"
+            "Given summaries for different security evaluations generate analysis.\n\n"
             "Evaluation Summaries:\n"
             "{summaries_str}"
         )

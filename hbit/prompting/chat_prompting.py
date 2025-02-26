@@ -65,8 +65,6 @@ class ChatPromptStore(base.PromptStore):
         ]
     )
 
-    # TODO: Review SQL prompts and make sure they can be used to retrieve two devices.
-    # TODO: And, they can work when AI will only gave them necessary information.
     patch_sql_few_shots = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt, examples=examples.patch_sql_few_shot_examples
     )

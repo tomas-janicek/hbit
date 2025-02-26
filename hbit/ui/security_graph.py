@@ -1,6 +1,5 @@
 import streamlit as st
 from langchain.schema import AIMessage, BaseMessage, HumanMessage
-from langchain_core.messages import ToolMessage
 
 from hbit import bootstrap, endpoints, enums, utils
 
@@ -8,13 +7,17 @@ from hbit import bootstrap, endpoints, enums, utils
 # Configure Streamlit Page #
 ############################
 
+_initial_messages: list[BaseMessage] = [
+    endpoints.GraphDeviceEvaluator.get_system_message(),
+    AIMessage(content="How can I help you?"),
+]
 
-st.set_page_config(page_title="👮‍♂️ Security Agent", page_icon="🚨")
-st.title("👮‍♂️ Security Agent: Chat with security expert")
+st.set_page_config(page_title="👮‍♂️ Security Graph", page_icon="🚨")
+st.title("👮‍♂️ Security Graph: Chat with security expert")
 
 if "messages" not in st.session_state:
     # default initial message to render in message state
-    st.session_state["messages"] = [AIMessage(content="How can I help you?")]
+    st.session_state["messages"] = [*_initial_messages]
 
 if "thread_id" not in st.session_state:
     thread_id = utils.generate_random_string(5)
@@ -43,7 +46,7 @@ for msg in st.session_state.messages:
 # TODO: Add description to the sidebar configurations
 def update_configuration() -> None:
     # reset chat on every model change
-    st.session_state["messages"] = [AIMessage(content="How can I help you?")]
+    st.session_state["messages"] = [*_initial_messages]
 
     registry = bootstrap.create_services(
         device_extractor_type=st.session_state.get("device_extractor_type")
@@ -52,12 +55,12 @@ def update_configuration() -> None:
         or enums.PatchExtractorType.JSON,
         summary_service_type=enums.SummaryServiceType.AI,
         model_provider=st.session_state.get("model_provider")
-        or enums.ModelProvider.OPEN_AI,
+        or enums.ModelProvider.GOOGLE,
     )
-    agent_evaluator = endpoints.AgentDeviceEvaluator(registry)
-    agent_graph = agent_evaluator.agent_executor
+    graph_evaluator = endpoints.GraphDeviceEvaluator(registry)
+    graph_graph = graph_evaluator.graph
     st.session_state["registry"] = registry
-    st.session_state["agent_graph"] = agent_graph
+    st.session_state["graph_graph"] = graph_graph
 
 
 if "registry" not in st.session_state:
@@ -72,7 +75,7 @@ with st.sidebar:
         list(enums.ModelProvider),
         selection_mode="single",
         key="model_provider",
-        default=enums.ModelProvider.OPEN_AI,
+        default=enums.ModelProvider.GOOGLE,
         on_change=update_configuration,
     )
     device_extractor = st.pills(
@@ -94,17 +97,18 @@ with st.sidebar:
 
 
 ##############
-# Call Agent #
+# Call Graph #
 ##############
 
 
-def call_agent(input: str) -> str:
+def call_graph() -> str:
     with st.status("🤔 Thinking") as status:
         thread_id = st.session_state.thread_id
         response = "Nothing was generated!"
+
         try:
-            for event in st.session_state.agent_graph.stream(
-                {"messages": [{"role": "user", "content": input}]},
+            for event in st.session_state.graph_graph.stream(
+                {"messages": st.session_state.messages},
                 config={
                     "configurable": {
                         "registry": st.session_state.registry,
@@ -114,15 +118,10 @@ def call_agent(input: str) -> str:
                 stream_mode="values",
             ):
                 message: BaseMessage = event["messages"][-1]
-                match message:
-                    case ToolMessage():
-                        st.write(f"Using: {message.name}")
-                    case _:
-                        pass
-
                 response = str(message.content)
+
         except Exception:
-            st.write("Something went wrong when calling agent.")
+            st.write("Something went wrong when calling graph.")
             status.update(label="⁉️ Error", state="error", expanded=False)
         else:
             status.update(label="✅ Completed", state="complete", expanded=False)
@@ -135,10 +134,8 @@ if input := st.chat_input():
     st.chat_message("user").write(input)
 
     with st.chat_message("assistant"):
-        response = call_agent(input)
+        response = call_graph()
 
-        # add that last message to the st_message_state
-        st.session_state.messages.append(AIMessage(content=response))
-
+        # TODO: Correctly show AI messages
         # visually refresh the complete response after the callback container
         st.write(response)

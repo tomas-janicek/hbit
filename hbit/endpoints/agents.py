@@ -1,3 +1,5 @@
+import pathlib
+
 from langchain.schema import BaseMessage
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langgraph.prebuilt import create_react_agent  # type: ignore
@@ -25,14 +27,14 @@ class AgentDeviceEvaluator:
         )
 
     def get_device_security_answer(
-        self, question: str, thread_id: str | None = None, print_steps: bool = False
+        self, input: str, thread_id: str | None = None, print_steps: bool = False
     ) -> str:
         if not thread_id:
             thread_id = utils.generate_random_string(5)
 
         response = "Nothing was generated!"
         for event in self.agent_executor.stream(
-            {"messages": [{"role": "user", "content": question}]},
+            {"messages": [{"role": "user", "content": input}]},
             config={
                 "configurable": {"registry": self.registry, "thread_id": thread_id}
             },
@@ -44,3 +46,8 @@ class AgentDeviceEvaluator:
             response = str(message.content)
 
         return response
+
+    def save_graph_image(self, img_path: pathlib.Path) -> None:
+        graph_image = self.agent_executor.get_graph().draw_mermaid_png()
+        with open(img_path, "wb") as file:
+            file.write(graph_image)

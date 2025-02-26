@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     REQUESTS_PER_SECOND: float = 0.5
 
     N_VULNERABILITIES: int = 10
+    N_SUMMARIES_LIMIT: int = 5
     N_TOKEN_GENERATION_LIMIT: int = 15_000
 
     @computed_field
