@@ -146,9 +146,9 @@ class ChatPromptStore(base.PromptStore):
     )
 
     # TODO: Give agent more context to how he should approach evaluation
-    # - ask user
-    # - gather data
-    # - ...
+    # TODO: - ask user
+    # TODO: - gather data
+    # TODO: - ...
     agent_system_message = (
         "You are an expert cyber-security analyst. "
         "Your purpose is to request relevant information from user about what he want to analyze "

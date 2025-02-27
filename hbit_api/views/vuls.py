@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlmodel import func, select
 
 from hbit_api.domain import models
@@ -23,7 +23,7 @@ def read_cves(
     skip: int = 0,
     limit: int = 100,
 ) -> dto.CVEsDto:
-    statement = select(models.CVE)
+    statement = select(models.CVE).options(selectinload(models.CVE.cwes))
     if patch_build is not None:
         statement = statement.join(models.CVE.patches).filter(
             models.Patch.build == patch_build

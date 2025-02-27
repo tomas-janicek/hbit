@@ -145,6 +145,13 @@ LOGGING = {
             "backupCount": 1,
             "filename": "logs/api.log",
         },
+        "sqlalchemy_file": {
+            "level": settings.LOGGING_LEVEL,
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "formatter": "default",
+            "backupCount": 1,
+            "filename": "logs/sqlalchemy.log",
+        },
     },
     "loggers": {
         "root": {
@@ -169,6 +176,11 @@ LOGGING = {
         "uvicorn.asgi": {
             "handlers": ["console", "file"],
             "level": "TRACE",
+            "propagate": False,
+        },
+        "sqlalchemy.engine": {
+            "handlers": ["sqlalchemy_file"],
+            "level": "INFO",
             "propagate": False,
         },
     },
