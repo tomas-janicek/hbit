@@ -1,7 +1,7 @@
 import pathlib
 import typing
 
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langgraph.func import END, START  # type: ignore
 from langgraph.graph import StateGraph  # type: ignore
 from langgraph.graph.state import Command  # type: ignore
@@ -49,24 +49,17 @@ class GraphDeviceEvaluator:
             thread_id = utils.generate_random_string(5)
 
         response = "Nothing was generated!"
-        step: dict[str, typing.Any] = {}
-        for step in self.graph.stream(
+        for event in self.graph.stream(
             {"messages": [self.get_system_message(), HumanMessage(content=input)]},
             config={
                 "configurable": {"registry": self.registry, "thread_id": thread_id}
             },
-            stream_mode="updates",
+            stream_mode="values",
         ):
-            for key, values in step.items():
-                name = key.replace("_", " ")
-                if print_steps:
-                    print(
-                        f"================================== {name.capitalize()} ==================================\n"
-                    )
-                for value in values.values():
-                    if print_steps:
-                        print(value)
-                    response = value
+            message: BaseMessage = event["messages"][-1]
+            if print_steps:
+                message.pretty_print()
+            response = str(message.content)
 
         return response
 

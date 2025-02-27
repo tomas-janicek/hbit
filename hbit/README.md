@@ -78,6 +78,7 @@ TBD
 
 TBD
 - Add search API tool (like [Tavily](https://python.langchain.com/docs/integrations/tools/tavily_search/)) that can be used as fallback if our data are not enough.
+- Chunk bigger vulnerabilities into smaller if they do not fit context. Because I do not have business api key, I am constrained to working with pretty small context.
 - Add email evaluation service and tool that communicates with [HIBP API](https://haveibeenpwned.com/API/v3).
 - Look into async evaluation and execution. It's certainly not required for this use case but it might be useful to know how it works.
 
