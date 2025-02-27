@@ -98,13 +98,14 @@ with st.sidebar:
 ##############
 
 
-def call_agent(input: str) -> str:
+def call_agent() -> BaseMessage | None:
     with st.status("🤔 Thinking") as status:
         thread_id = st.session_state.thread_id
-        response = "Nothing was generated!"
+
         try:
+            message = AIMessage(content="Nothing was generated!")
             for event in st.session_state.agent_graph.stream(
-                {"messages": [{"role": "user", "content": input}]},
+                {"messages": st.session_state.messages},
                 config={
                     "configurable": {
                         "registry": st.session_state.registry,
@@ -120,25 +121,21 @@ def call_agent(input: str) -> str:
                     case _:
                         pass
 
-                response = str(message.content)
+            status.update(label="✅ Completed", state="complete", expanded=False)
+            return message
         except Exception:
             st.write("Something went wrong when calling agent.")
             status.update(label="⁉️ Error", state="error", expanded=False)
-        else:
-            status.update(label="✅ Completed", state="complete", expanded=False)
-
-    return response
+            return None
 
 
 if input := st.chat_input():
     st.session_state.messages.append(HumanMessage(content=input))
     st.chat_message("user").write(input)
 
-    with st.chat_message("assistant"):
-        response = call_agent(input)
-
+    response = call_agent()
+    if response:
         # add that last message to the st_message_state
-        st.session_state.messages.append(AIMessage(content=response))
-
+        st.session_state.messages.append(response)
         # visually refresh the complete response after the callback container
-        st.write(response)
+        st.chat_message("assistant").write(response.content)

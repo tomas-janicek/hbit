@@ -133,5 +133,7 @@ if input := st.chat_input():
 
     response = call_graph()
     if response:
-        st.chat_message("assistant").write(response.content)
+        # add that last message to the st_message_state
         st.session_state.messages.append(response)
+        # visually refresh the complete response after the callback container
+        st.chat_message("assistant").write(response.content)
