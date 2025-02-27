@@ -55,7 +55,7 @@ def update_configuration() -> None:
         or enums.PatchExtractorType.JSON,
         summary_service_type=enums.SummaryServiceType.AI,
         model_provider=st.session_state.get("model_provider")
-        or enums.ModelProvider.GOOGLE,
+        or enums.ModelProvider.OPEN_AI,
     )
     graph_evaluator = endpoints.GraphDeviceEvaluator(registry)
     graph_graph = graph_evaluator.graph
@@ -75,7 +75,7 @@ with st.sidebar:
         list(enums.ModelProvider),
         selection_mode="single",
         key="model_provider",
-        default=enums.ModelProvider.GOOGLE,
+        default=enums.ModelProvider.OPEN_AI,
         on_change=update_configuration,
     )
     device_extractor = st.pills(

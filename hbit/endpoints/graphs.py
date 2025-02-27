@@ -29,14 +29,14 @@ class GraphDeviceEvaluator:
         graph_builder.add_node("get_device_evaluation", nodes.get_device_evaluation)
         graph_builder.add_node("get_patch_evaluation", nodes.get_patch_evaluation)
         graph_builder.add_node("respond_to_user", nodes.respond_to_user)
+
         graph_builder.add_edge(START, "reset_max_steps")
         graph_builder.add_edge("reset_max_steps", "route_through_graph")
-        graph_builder.add_edge("respond_to_user", END)
-
         graph_builder.add_edge("get_device_identifier", "route_through_graph")
         graph_builder.add_edge("get_patch_build", "route_through_graph")
         graph_builder.add_edge("get_device_evaluation", "route_through_graph")
         graph_builder.add_edge("get_patch_evaluation", "route_through_graph")
+        graph_builder.add_edge("respond_to_user", END)
 
         self.graph = graph_builder.compile(checkpointer=saver)
         self.model = self.registry.get_service(types.AgentModel)
@@ -79,6 +79,7 @@ class GraphDeviceEvaluator:
             "get_device_evaluation",
             "get_patch_evaluation",
             "respond_to_user",
+            "route_through_graph",
         ]
     ]:
         """Route the state through the graph."""
@@ -105,64 +106,78 @@ class GraphDeviceEvaluator:
         conversation_messages = [*state["messages"]]
         conversation_messages[0] = SystemMessage(prompt)
         # TODO: Add Few Shot Learning to the model
-        response: dto.GraphRouterResponse = self.graph_router.invoke(
+        action: dto.GraphRouterResponse = self.graph_router.invoke(
             conversation_messages
         )  # type: ignore
 
         try:
-            match response.action:
-                case enums.GraphAction.DEVICE_EXTRACTION:
-                    assert isinstance(response.data, dto.ExtractionText), (
-                        "Data must be of type ExtractionText"
-                    )
-                    return Command(
-                        goto="get_device_identifier",
-                        update={
-                            "text": response.data.text,
-                            "current_step": state["current_step"] + 1,
-                        },
-                    )
-                case enums.GraphAction.PATCH_EXTRACTION:
-                    assert isinstance(response.data, dto.ExtractionText), (
-                        "Data must be of type ExtractionText"
-                    )
-                    return Command(
-                        goto="get_patch_build",
-                        update={
-                            "text": response.data.text,
-                            "current_step": state["current_step"] + 1,
-                        },
-                    )
-                case enums.GraphAction.DEVICE_EVALUATION:
-                    assert isinstance(response.data, dto.DeviceEvaluationParameters), (
-                        "Data must be of type DeviceEvaluationParameters"
-                    )
-                    return Command(
-                        goto="get_device_evaluation",
-                        update={
-                            **response.data.model_dump(),
-                            "current_step": state["current_step"] + 1,
-                        },
-                    )
-                case enums.GraphAction.PATCH_EVALUATION:
-                    assert isinstance(response.data, dto.PatchEvaluationParameters), (
-                        "Data must be of type PatchEvaluationParameters"
-                    )
-                    return Command(
-                        goto="get_patch_evaluation",
-                        update={
-                            **response.data.model_dump(),
-                            "current_step": state["current_step"] + 1,
-                        },
-                    )
-                case enums.GraphAction.RESPOND:
-                    return Command(goto="respond_to_user")
+            return self.send_action(state, action)
         except Exception as error:
             message = AIMessage(f"Error: {error} Try fixing the error.")
             return Command(
                 goto="route_through_graph",
                 update={"messages": message, "current_step": state["current_step"] + 1},
             )
+
+    def send_action(
+        self, state: dto.GraphStateSchema, action: dto.GraphRouterResponse
+    ) -> Command[
+        typing.Literal[
+            "get_device_identifier",
+            "get_patch_build",
+            "get_device_evaluation",
+            "get_patch_evaluation",
+            "respond_to_user",
+            "route_through_graph",
+        ]
+    ]:
+        match action.action:
+            case enums.GraphAction.DEVICE_EXTRACTION:
+                assert isinstance(action.data, dto.ExtractionText), (
+                    "Data must be of type ExtractionText"
+                )
+                return Command(
+                    goto="get_device_identifier",
+                    update={
+                        "text": action.data.text,
+                        "current_step": state["current_step"] + 1,
+                    },
+                )
+            case enums.GraphAction.PATCH_EXTRACTION:
+                assert isinstance(action.data, dto.ExtractionText), (
+                    "Data must be of type ExtractionText"
+                )
+                return Command(
+                    goto="get_patch_build",
+                    update={
+                        "text": action.data.text,
+                        "current_step": state["current_step"] + 1,
+                    },
+                )
+            case enums.GraphAction.DEVICE_EVALUATION:
+                assert isinstance(action.data, dto.DeviceEvaluationParameters), (
+                    "Data must be of type DeviceEvaluationParameters"
+                )
+                return Command(
+                    goto="get_device_evaluation",
+                    update={
+                        **action.data.model_dump(),
+                        "current_step": state["current_step"] + 1,
+                    },
+                )
+            case enums.GraphAction.PATCH_EVALUATION:
+                assert isinstance(action.data, dto.PatchEvaluationParameters), (
+                    "Data must be of type PatchEvaluationParameters"
+                )
+                return Command(
+                    goto="get_patch_evaluation",
+                    update={
+                        **action.data.model_dump(),
+                        "current_step": state["current_step"] + 1,
+                    },
+                )
+            case enums.GraphAction.RESPOND:
+                return Command(goto="respond_to_user")
 
     def save_graph_image(self, img_path: pathlib.Path) -> None:
         graph_image = self.graph.get_graph().draw_mermaid_png()
