@@ -101,12 +101,12 @@ with st.sidebar:
 ##############
 
 
-def call_graph() -> str:
+def call_graph() -> BaseMessage | None:
     with st.status("🤔 Thinking") as status:
         thread_id = st.session_state.thread_id
-        response = "Nothing was generated!"
 
         try:
+            message = AIMessage(content="Nothing was generated!")
             for event in st.session_state.graph_graph.stream(
                 {"messages": st.session_state.messages},
                 config={
@@ -118,24 +118,20 @@ def call_graph() -> str:
                 stream_mode="values",
             ):
                 message: BaseMessage = event["messages"][-1]
-                response = str(message.content)
 
+            status.update(label="✅ Completed", state="complete", expanded=False)
+            return message
         except Exception:
             st.write("Something went wrong when calling graph.")
             status.update(label="⁉️ Error", state="error", expanded=False)
-        else:
-            status.update(label="✅ Completed", state="complete", expanded=False)
-
-    return response
+            return None
 
 
 if input := st.chat_input():
     st.session_state.messages.append(HumanMessage(content=input))
     st.chat_message("user").write(input)
 
-    with st.chat_message("assistant"):
-        response = call_graph()
-
-        # TODO: Correctly show AI messages
-        # visually refresh the complete response after the callback container
-        st.write(response)
+    response = call_graph()
+    if response:
+        st.chat_message("assistant").write(response.content)
+        st.session_state.messages.append(response)

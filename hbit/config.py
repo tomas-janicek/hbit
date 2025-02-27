@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     N_VULNERABILITIES: int = 10
     N_SUMMARIES_LIMIT: int = 5
     N_TOKEN_GENERATION_LIMIT: int = 15_000
+    MAX_STEPS: int = 3
 
     @computed_field
     @property

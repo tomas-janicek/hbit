@@ -82,15 +82,13 @@ class AgentStateSchema(typing.TypedDict):
 
 
 class GraphStateSchema(typing.TypedDict):
-    messages: typing.Annotated[typing.Sequence[BaseMessage], add_messages]
-    device_identifiers: str
-    patch_builds: str
-    evaluation: common_dto.EvaluationDto
-    summaries: list[str]
+    messages: typing.Annotated[list[BaseMessage], add_messages]
+    max_steps: int
+    current_step: int
 
 
 class ExtractionType(typing.TypedDict):
-    messages: typing.Sequence[BaseMessage]
+    messages: list[BaseMessage]
     extraction_type: typing.Literal["device", "patch"]
 
 

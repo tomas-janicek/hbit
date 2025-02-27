@@ -6,7 +6,17 @@ from langgraph.func import END, START  # type: ignore
 from langgraph.graph import StateGraph  # type: ignore
 from langgraph.graph.state import Command  # type: ignore
 
-from hbit import clients, dto, enums, extractors, services, summaries, types, utils
+from hbit import (
+    clients,
+    dto,
+    enums,
+    extractors,
+    services,
+    settings,
+    summaries,
+    types,
+    utils,
+)
 
 
 class GraphDeviceEvaluator:
@@ -15,13 +25,15 @@ class GraphDeviceEvaluator:
         saver = self.registry.get_service(types.Saver)
 
         graph_builder = StateGraph(dto.GraphStateSchema)
+        graph_builder.add_node("reset_max_steps", self.reset_max_steps)
         graph_builder.add_node("route_through_graph", self.route_through_graph)
         graph_builder.add_node("get_device_identifier", self.get_device_identifier)
         graph_builder.add_node("get_patch_build", self.get_patch_build)
         graph_builder.add_node("get_device_evaluation", self.get_device_evaluation)
         graph_builder.add_node("get_patch_evaluation", self.get_patch_evaluation)
         graph_builder.add_node("respond_to_user", self.respond_to_user)
-        graph_builder.add_edge(START, "route_through_graph")
+        graph_builder.add_edge(START, "reset_max_steps")
+        graph_builder.add_edge("reset_max_steps", "route_through_graph")
         graph_builder.add_edge("respond_to_user", END)
 
         graph_builder.add_edge("get_device_identifier", "route_through_graph")
@@ -61,6 +73,9 @@ class GraphDeviceEvaluator:
 
         return response
 
+    def reset_max_steps(self, state: dto.GraphStateSchema) -> dict[str, typing.Any]:
+        return {"max_steps": settings.MAX_STEPS, "current_step": 0}
+
     def route_through_graph(
         self, state: dto.GraphStateSchema
     ) -> Command[
@@ -73,19 +88,24 @@ class GraphDeviceEvaluator:
         ]
     ]:
         """Route the state through the graph."""
-        # TODO: Add safeguards to prevent infinite loops and make sure the response is valid
+        if state["current_step"] >= state["max_steps"]:
+            return Command(goto="respond_to_user")
+
         prompt = (
             "Given the conversation below, decide what should be done next to answer fulfill users requests. "
-            "You choose what to do by returning JSON schema of certain type. If any message contains error (contains 'Error' in message), follow infractions in error message. "
+            "You choose what to do by returning JSON schema of with certain data. "
+            "Before choosing action make sure you did not call the same action with the same data by checking the conversation. "
             f"If you do not know what to do, call {enums.GraphAction.RESPOND} which will request more information from user. "
-            "If any action successfully finished, do not call it again with the same data. Action finished successfully if it contains 'Success' in message.\n"
+            f"If any message contains error (contains 'Error' in message), follow infractions in error message. If action failed and you can not call it with different data, call {enums.GraphAction.RESPOND} asking for more information."
+            "If any action successfully finished (contains 'Success' in message), do not call it again with the same data. "
+            "\n"
             "You must choose one of these actions:\n"
             # TODO: Add examples and more information about each action
             f"- {enums.GraphAction.RESPOND}: is action that responds to user based on conversation. Use this action if you are not sure what to call or you have nothing else to call. This should be default action if you are not sure.\n"
-            f"- {enums.GraphAction.DEVICE_EXTRACTION}: is action that extract device identifier which can be used for device evaluation. Use this action if user asks about his device. You must provide data field of response schema in ExtractionText type. Should be something like {{'text': 'I have iPhone 13 Pro.'}}\n"
+            f"- {enums.GraphAction.DEVICE_EXTRACTION}: is action that extract device identifier which can be used for device evaluation. Use this action if user asks about his device. You must provide data field of response schema in ExtractionText type. Should be something like {{'text': 'I have iPhone 13 Pro'}}\n"
             f"- {enums.GraphAction.PATCH_EXTRACTION}: is action that extract patch build which can be used for device evaluation or patch evaluation. Use this action if user asks about his patch. You must provide data field of response schema in ExtractionText type. Should be something like {{'text': 'it has iOS 18.2.1 installed.'}}\n"
-            f"- {enums.GraphAction.DEVICE_EVALUATION}: is action that evaluate device based on device identifier and patch build. You must provide device identifier and patch_build in data field of response schema. Something like {{'device_identifier': 'iphone14,2', patch_build: '22B83'}}\n"
-            f"- {enums.GraphAction.PATCH_EVALUATION}: is action that evaluate patch based on patch build. You must provide patch build in data field of response schema. Something like {{'patch_build': '22B83'}}\n"
+            f"- {enums.GraphAction.DEVICE_EVALUATION}: is action that evaluate device based on device identifier and patch build. You must provide provide data field of response schema in DeviceEvaluationParameters type. Something like {{'device_identifier': 'iphone14,2', patch_build: '22B83'}}\n"
+            f"- {enums.GraphAction.PATCH_EVALUATION}: is action that evaluate patch based on patch build. You must provide data field of response schema in PatchEvaluationParameters type. Something like {{'patch_build': '22B83'}}\n"
         )
         conversation_messages = [*state["messages"]]
         conversation_messages[0] = SystemMessage(prompt)
@@ -94,33 +114,60 @@ class GraphDeviceEvaluator:
             conversation_messages
         )  # type: ignore
 
-        match response.action:
-            case enums.GraphAction.DEVICE_EXTRACTION:
-                assert isinstance(response.data, dto.ExtractionText)
-                return Command(
-                    goto="get_device_identifier",
-                    update={"text": response.data.text},
-                )
-            case enums.GraphAction.PATCH_EXTRACTION:
-                assert isinstance(response.data, dto.ExtractionText)
-                return Command(
-                    goto="get_patch_build",
-                    update={"text": response.data.text},
-                )
-            case enums.GraphAction.DEVICE_EVALUATION:
-                assert isinstance(response.data, dto.DeviceEvaluationParameters)
-                return Command(
-                    goto="get_device_evaluation",
-                    update=response.data.model_dump(),
-                )
-            case enums.GraphAction.PATCH_EVALUATION:
-                assert isinstance(response.data, dto.PatchEvaluationParameters)
-                return Command(
-                    goto="get_patch_evaluation",
-                    update=response.data.model_dump(),
-                )
-            case enums.GraphAction.RESPOND:
-                return Command(goto="respond_to_user")
+        try:
+            match response.action:
+                case enums.GraphAction.DEVICE_EXTRACTION:
+                    assert isinstance(response.data, dto.ExtractionText), (
+                        "Data must be of type ExtractionText"
+                    )
+                    return Command(
+                        goto="get_device_identifier",
+                        update={
+                            "text": response.data.text,
+                            "current_step": state["current_step"] + 1,
+                        },
+                    )
+                case enums.GraphAction.PATCH_EXTRACTION:
+                    assert isinstance(response.data, dto.ExtractionText), (
+                        "Data must be of type ExtractionText"
+                    )
+                    return Command(
+                        goto="get_patch_build",
+                        update={
+                            "text": response.data.text,
+                            "current_step": state["current_step"] + 1,
+                        },
+                    )
+                case enums.GraphAction.DEVICE_EVALUATION:
+                    assert isinstance(response.data, dto.DeviceEvaluationParameters), (
+                        "Data must be of type DeviceEvaluationParameters"
+                    )
+                    return Command(
+                        goto="get_device_evaluation",
+                        update={
+                            **response.data.model_dump(),
+                            "current_step": state["current_step"] + 1,
+                        },
+                    )
+                case enums.GraphAction.PATCH_EVALUATION:
+                    assert isinstance(response.data, dto.PatchEvaluationParameters), (
+                        "Data must be of type PatchEvaluationParameters"
+                    )
+                    return Command(
+                        goto="get_patch_evaluation",
+                        update={
+                            **response.data.model_dump(),
+                            "current_step": state["current_step"] + 1,
+                        },
+                    )
+                case enums.GraphAction.RESPOND:
+                    return Command(goto="respond_to_user")
+        except Exception as error:
+            message = AIMessage(f"Error: {error} Try fixing the error.")
+            return Command(
+                goto="route_through_graph",
+                update={"messages": message, "current_step": state["current_step"] + 1},
+            )
 
     # TODO: extract nodes into separate module
     def respond_to_user(self, state: dto.GraphStateSchema) -> dict[str, typing.Any]:
@@ -140,10 +187,10 @@ class GraphDeviceEvaluator:
                 patch_build=state["patch_build"],
             )
             summary = summary_service.generate_summary(evaluation)
-            message = AIMessage(summary)
-            return {
-                "messages": f"Success: Action {enums.GraphAction.DEVICE_EVALUATION} created evaluation:\n{message}"
-            }
+            message = AIMessage(
+                f"Success: Action {enums.GraphAction.DEVICE_EVALUATION} created evaluation:\n{summary}"
+            )
+            return {"messages": message}
         except Exception as error:
             message = AIMessage(f"Error occurred: {error}")
             return {"messages": message}
@@ -158,10 +205,10 @@ class GraphDeviceEvaluator:
         try:
             evaluation = client.get_patch_evaluation(patch_build=state["patch_build"])
             summary = summary_service.generate_summary(evaluation)
-            message = AIMessage(summary)
-            return {
-                "messages": f"Success: Action {enums.GraphAction.PATCH_EVALUATION} created evaluation:\n{message}"
-            }
+            message = AIMessage(
+                f"Success: Action {enums.GraphAction.PATCH_EVALUATION} created evaluation:\n{summary}"
+            )
+            return {"messages": message}
         except Exception as error:
             message = AIMessage(f"Error occurred: {error}")
             return {"messages": message}
