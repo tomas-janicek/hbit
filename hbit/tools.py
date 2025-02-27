@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool  # type: ignore
 from langchain_core.tools.base import BaseTool
 
-from hbit import clients, extractors, services, summaries
+from hbit import clients, extractors, summaries, utils
 
 
 @tool
@@ -27,7 +27,7 @@ def get_device_evaluation(
     Example device identifier: iphone7,2, iphone9,4, iphone17,3.
     Example patch build: 22b83, 21g93, 20h240, 19h370, 19b74
     """
-    registry = _get_registry_from_config(config)
+    registry = utils.get_registry_from_config(config)
     client = registry.get_service(clients.HBITClient)
     summary_service = registry.get_service(summaries.SummaryService)
 
@@ -59,7 +59,7 @@ def get_patch_evaluation(
     generate_evaluation_summary tool.
     Example patch build: 22b83, 21g93, 20h240, 19h370, 19b74
     """
-    registry = _get_registry_from_config(config)
+    registry = utils.get_registry_from_config(config)
     client = registry.get_service(clients.HBITClient)
     summary_service = registry.get_service(summaries.SummaryService)
 
@@ -91,7 +91,7 @@ def get_user_device_identifier(
     Example text: How secure is an iPhone XS?
     Example output: iphone11,2
     """
-    registry = _get_registry_from_config(config)
+    registry = utils.get_registry_from_config(config)
     device_extractor = registry.get_service(extractors.DeviceExtractor)
 
     device_identifier = device_extractor.extract_device_identifier(text=text)
@@ -127,7 +127,7 @@ def get_user_patch_build(
     Example text: How secure is my iPhone 13 Pro if I have patch 18.1.0 installed?
     Example output: 22b83
     """
-    registry = _get_registry_from_config(config)
+    registry = utils.get_registry_from_config(config)
     patch_extractor = registry.get_service(extractors.PatchExtractor)
 
     patch_build = patch_extractor.extract_patch_build(text=text)
@@ -160,7 +160,7 @@ def get_cves_for_patch(
 
     Example patch build: 22b83, 21g93, 20h240, 19h370, 19b74.
     """
-    registry = _get_registry_from_config(config)
+    registry = utils.get_registry_from_config(config)
     client = registry.get_service(clients.HBITClient)
 
     try:
@@ -182,13 +182,3 @@ TOOLS: list[BaseTool] = [
     get_user_patch_build,
     get_cves_for_patch,
 ]
-
-
-def _get_registry_from_config(config: RunnableConfig) -> services.ServiceContainer:
-    registry = config.get("configurable", {}).get("registry", None)
-    if not registry:
-        raise RuntimeError(
-            "Error in tool / model configuration. Registry must be part of RunnableConfig!"
-        )
-
-    return registry

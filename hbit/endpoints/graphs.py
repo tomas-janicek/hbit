@@ -7,13 +7,10 @@ from langgraph.graph import StateGraph  # type: ignore
 from langgraph.graph.state import Command  # type: ignore
 
 from hbit import (
-    clients,
     dto,
     enums,
-    extractors,
+    nodes,
     services,
-    settings,
-    summaries,
     types,
     utils,
 )
@@ -25,13 +22,13 @@ class GraphDeviceEvaluator:
         saver = self.registry.get_service(types.Saver)
 
         graph_builder = StateGraph(dto.GraphStateSchema)
-        graph_builder.add_node("reset_max_steps", self.reset_max_steps)
+        graph_builder.add_node("reset_max_steps", nodes.reset_max_steps)
         graph_builder.add_node("route_through_graph", self.route_through_graph)
-        graph_builder.add_node("get_device_identifier", self.get_device_identifier)
-        graph_builder.add_node("get_patch_build", self.get_patch_build)
-        graph_builder.add_node("get_device_evaluation", self.get_device_evaluation)
-        graph_builder.add_node("get_patch_evaluation", self.get_patch_evaluation)
-        graph_builder.add_node("respond_to_user", self.respond_to_user)
+        graph_builder.add_node("get_device_identifier", nodes.get_device_identifier)
+        graph_builder.add_node("get_patch_build", nodes.get_patch_build)
+        graph_builder.add_node("get_device_evaluation", nodes.get_device_evaluation)
+        graph_builder.add_node("get_patch_evaluation", nodes.get_patch_evaluation)
+        graph_builder.add_node("respond_to_user", nodes.respond_to_user)
         graph_builder.add_edge(START, "reset_max_steps")
         graph_builder.add_edge("reset_max_steps", "route_through_graph")
         graph_builder.add_edge("respond_to_user", END)
@@ -73,9 +70,6 @@ class GraphDeviceEvaluator:
 
         return response
 
-    def reset_max_steps(self, state: dto.GraphStateSchema) -> dict[str, typing.Any]:
-        return {"max_steps": settings.MAX_STEPS, "current_step": 0}
-
     def route_through_graph(
         self, state: dto.GraphStateSchema
     ) -> Command[
@@ -88,6 +82,7 @@ class GraphDeviceEvaluator:
         ]
     ]:
         """Route the state through the graph."""
+        # make sure we do not exceed the maximum number of steps so we do not get stuck in a loop
         if state["current_step"] >= state["max_steps"]:
             return Command(goto="respond_to_user")
 
@@ -168,88 +163,6 @@ class GraphDeviceEvaluator:
                 goto="route_through_graph",
                 update={"messages": message, "current_step": state["current_step"] + 1},
             )
-
-    # TODO: extract nodes into separate module
-    def respond_to_user(self, state: dto.GraphStateSchema) -> dict[str, typing.Any]:
-        response = self.model.invoke(state["messages"])
-        return {"messages": response}
-
-    def get_device_evaluation(
-        self, state: dto.DeviceEvaluationSchema
-    ) -> dict[str, typing.Any]:
-        """Get the evaluation of a device."""
-        client = self.registry.get_service(clients.HBITClient)
-        summary_service = self.registry.get_service(summaries.SummaryService)
-
-        try:
-            evaluation = client.get_device_evaluation(
-                device_identifier=state["device_identifier"],
-                patch_build=state["patch_build"],
-            )
-            summary = summary_service.generate_summary(evaluation)
-            message = AIMessage(
-                f"Success: Action {enums.GraphAction.DEVICE_EVALUATION} created evaluation:\n{summary}"
-            )
-            return {"messages": message}
-        except Exception as error:
-            message = AIMessage(f"Error occurred: {error}")
-            return {"messages": message}
-
-    def get_patch_evaluation(
-        self, state: dto.PatchEvaluationSchema
-    ) -> dict[str, typing.Any]:
-        """Get the evaluation of a patch."""
-        client = self.registry.get_service(clients.HBITClient)
-        summary_service = self.registry.get_service(summaries.SummaryService)
-
-        try:
-            evaluation = client.get_patch_evaluation(patch_build=state["patch_build"])
-            summary = summary_service.generate_summary(evaluation)
-            message = AIMessage(
-                f"Success: Action {enums.GraphAction.PATCH_EVALUATION} created evaluation:\n{summary}"
-            )
-            return {"messages": message}
-        except Exception as error:
-            message = AIMessage(f"Error occurred: {error}")
-            return {"messages": message}
-
-    def get_device_identifier(
-        self, state: dto.ExtractionSchema
-    ) -> dict[str, typing.Any]:
-        """Get device identifier from any text. Return None if no device was found."""
-        device_extractor = self.registry.get_service(extractors.DeviceExtractor)
-
-        text = state["text"]
-        device_identifier = device_extractor.extract_device_identifier(text=text)
-
-        if device_identifier:
-            message = AIMessage(
-                f"Success: Action {enums.GraphAction.DEVICE_EXTRACTION} extracted device identifier: {device_identifier} from text '{text}'."
-            )
-        else:
-            message = AIMessage(
-                f"Error: No device identifier was found in text '{text}'. Ask user for more information about the device."
-            )
-
-        return {"messages": message}
-
-    def get_patch_build(self, state: dto.ExtractionSchema) -> dict[str, typing.Any]:
-        """Get patch build from any text. Return None if no patch was found."""
-        patch_extractor = self.registry.get_service(extractors.PatchExtractor)
-
-        text = state["text"]
-        patch_build = patch_extractor.extract_patch_build(text=text)
-
-        if patch_build:
-            message = AIMessage(
-                f"Success: Action {enums.GraphAction.PATCH_EXTRACTION} extracted patch build: {patch_build} from text '{text}'."
-            )
-        else:
-            message = AIMessage(
-                f"Error: No patch build was found in text '{text}'. Ask user for more information about the patch."
-            )
-
-        return {"messages": message}
 
     def save_graph_image(self, img_path: pathlib.Path) -> None:
         graph_image = self.graph.get_graph().draw_mermaid_png()
