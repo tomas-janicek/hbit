@@ -5,30 +5,6 @@ analyzing the security status of devices, particularly focusing on
 iOS devices. It includes various modules for bootstrapping services, 
 handling CLI commands, managing configurations, and evaluating device security.
 
-## Project Structure
-
-```
-.
-├── bootstrap/
-├── cli.py
-├── clients.py
-├── config.py
-├── core.py
-├── dto.py
-├── endpoints/
-├── enums.py
-├── evaluations/
-├── extractors/
-├── notebooks/
-├── prompting/
-├── services/
-├── summaries.py
-├── tools.py
-├── types.py
-├── ui/
-└── utils.py
-```
-
 ## Modules
 
 ### Core
