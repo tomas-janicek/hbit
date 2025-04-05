@@ -17,7 +17,7 @@ class CAPECScraper(base.Scraper[dto.CAPEC]):
         root = tree.getroot()
 
         for attack_pattern in root.iter(f"{self._tag_prefix}Attack_Pattern"):
-            if not isinstance(attack_pattern, ET.Element):
+            if not isinstance(attack_pattern, ET.Element):  # type: ignore
                 raise ValueError()
             try:
                 capec = self._create_capec(attack_pattern)

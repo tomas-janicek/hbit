@@ -17,7 +17,7 @@ class CWEScraper(base.Scraper[dto.CWE]):
         root = tree.getroot()
 
         for weakness in root.iter(f"{self._tag_prefix}Weakness"):
-            if not isinstance(weakness, ET.Element):
+            if not isinstance(weakness, ET.Element):  # type: ignore
                 raise ValueError()
             try:
                 cwe = self._create_cwe(weakness)

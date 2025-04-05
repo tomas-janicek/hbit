@@ -39,6 +39,17 @@ class Settings(BaseSettings):
     N_TOKEN_GENERATION_LIMIT: int = 15_000
     MAX_STEPS: int = 3
 
+    SECURITY_PAPERS_PATH: Path = DATA_DIR / "security_papers.parquet"
+    SECURITY_PAPERS_HF_LOCATION: str = (
+        "hf://datasets/clouditera/security-paper-datasets/data/train-*-of-*.parquet"
+    )
+
+    VECTOR_DB_URI: str = "http://localhost:19530"
+    VECTOR_DB_NAME: str = "hbit"
+    EMBEDDING_SIZE: int = 1_536
+    CHUNK_SIZE: int = 2_048
+    CHUNK_OVERLAP: int = 64
+
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

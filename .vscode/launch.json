@@ -253,5 +253,69 @@
             "justMyCode": false,
             "envFile": "${workspaceFolder}/.env",
         },
+        {
+            "name": "Create Vector DB",
+            "consoleTitle": "Create Vector DB",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/corpus/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "create_db"
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Create Security Papers",
+            "consoleTitle": "Create Security Papers",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/corpus/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "create_security_papers",
+                "--re-create"
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Load Security Papers",
+            "consoleTitle": "Load Security Papers",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/corpus/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "load_security_papers_dataset",
+                "--length=10"
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "Search Security Papers",
+            "consoleTitle": "Search Security Papers",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceRoot}/hbit/corpus/cli.py",
+            "env": {
+                "PYTHONPATH": "."
+            },
+            "args": [
+                "search_vector_db",
+                "Cybersecurity Blue Team Toolkit Nadean H. Tanner",
+                "--n-results=5",
+            ],
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env",
+        },
     ]
 }

@@ -6,7 +6,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_together import ChatTogether
 
 from hbit import enums, prompting, services, settings, types
@@ -109,11 +109,15 @@ class ModelServiceFactory:
             rate_limiter=rate_limiter,
         )
 
+        embedding_model_name = "text-embedding-3-small"
+        embedding_model = OpenAIEmbeddings(model=embedding_model_name)
+
         self.registry.register_service(types.DefaultModel, default_model)
         self.registry.register_service(types.CodeModel, small_model)
         self.registry.register_service(types.SmallModel, small_model)
         self.registry.register_service(types.ExtractionModel, small_model)
         self.registry.register_service(types.AgentModel, default_model)
+        self.registry.register_service(types.EmbeddingModel, embedding_model)
         return self
 
     def add_anthropic_models(self) -> typing.Self:

@@ -143,3 +143,6 @@ dmypy.json
 
 # SQLite DB
 *.db
+
+# Data Files
+data/

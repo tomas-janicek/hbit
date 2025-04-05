@@ -42,3 +42,7 @@ def get_registry_from_config(config: RunnableConfig) -> services.ServiceContaine
         )
 
     return registry
+
+
+def utf8_length(text: str) -> int:
+    return len(text.encode("utf-8"))

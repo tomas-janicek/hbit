@@ -41,3 +41,12 @@ class GraphAction(enum.StrEnum):
     DEVICE_EVALUATION = "device_evaluation"
     PATCH_EVALUATION = "patch_evaluation"
     RESPOND = "respond_to_user"
+
+
+class SecurityPaperCategory(enum.StrEnum):
+    EPUB = "epub_books"
+    PDF = "pdf"
+    CVE_DATASET = "cve_dataset"
+    POC = "poc"
+    SEC_KNOWLEAGE = "sec-knowleage"
+    SECON = "secon"

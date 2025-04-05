@@ -2,7 +2,10 @@ import typer
 
 from hbit import bootstrap, endpoints, enums, settings
 
-cli = typer.Typer()
+cli = typer.Typer(
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False,
+)
 
 
 @cli.command(name="get_agent_evaluation")

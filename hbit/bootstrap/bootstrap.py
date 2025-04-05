@@ -5,6 +5,7 @@ from hbit import (
 
 from .model_factory import ModelServiceFactory
 from .service_factory import ServicesFactory
+from .vector_db_factory import VectorDBFactory
 
 
 def create_services(
@@ -16,6 +17,7 @@ def create_services(
     registry = services.ServiceContainer()
     service_factory = ServicesFactory(registry)
     model_factory = ModelServiceFactory(registry)
+    vector_db_factory = VectorDBFactory(registry)
 
     model_factory.add_models(model_provider)
 
@@ -26,5 +28,8 @@ def create_services(
     service_factory.add_device_extractor(device_extractor_type)
     service_factory.add_patch_extractor(patch_extractor_type)
     service_factory.add_summary_service(summary_service_type)
+
+    vector_db_factory.add_vector_db()
+    vector_db_factory.add_text_splitter()
 
     return registry

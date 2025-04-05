@@ -2,8 +2,8 @@ import typing
 
 import pydantic
 from langchain.schema import BaseMessage
-from langgraph.graph import add_messages  # type: ignore
-from langgraph.managed import IsLastStep, RemainingSteps  # type: ignore
+from langgraph.graph import add_messages
+from langgraph.managed import IsLastStep, RemainingSteps
 
 from common import dto as common_dto
 from hbit import enums
@@ -65,6 +65,23 @@ class PatchEvaluationParameters(pydantic.BaseModel):
 class GraphRouterResponse(pydantic.BaseModel):
     action: enums.GraphAction
     data: ExtractionText | DeviceEvaluationParameters | PatchEvaluationParameters | None
+
+
+class SecurityPaper(pydantic.BaseModel):
+    text: str
+    category: enums.SecurityPaperCategory
+
+    def __str__(self) -> str:
+        return f"Category: {self.category.value}\nText: {self.text}\n"
+
+
+class SecurityPaperQuery(pydantic.BaseModel):
+    category: enums.SecurityPaperCategory | None = None
+
+
+class SecurityPaperResponse(pydantic.BaseModel):
+    security_paper: SecurityPaper
+    distance: float
 
 
 #################
